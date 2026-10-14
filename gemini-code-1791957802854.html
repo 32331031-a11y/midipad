@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generative Motif Pad</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #1a1a1a;
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    touch-action: manipulation;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    text-align: center;
+  }
+  p.desc {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  #status {
+    font-size: 1rem;
+    color: #00e5ff;
+    margin-bottom: 20px;
+    height: 1.2em;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .pad-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 10px;
+    width: 90vw;
+    max-width: 450px;
+    aspect-ratio: 1 / 1;
+  }
+  .pad {
+    background-color: #2a2a2a;
+    border: 2px solid #444;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+  }
+  .pad:active, .pad.active {
+    background-color: #00e5ff;
+    border-color: #b2ebf2;
+    transform: scale(0.92);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+  }
+  .controls {
+    margin-top: 25px;
+  }
+  button.stop-btn {
+    padding: 12px 35px;
+    font-size: 1.2rem;
+    background-color: #ff1744;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  button.stop-btn:active {
+    background-color: #d50000;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Motif Music Generator</h1>
+  <p class="desc">A-A'-A-Bの構造で「曲」としてのモチーフを自動生成します</p>
+  <div id="status">Tap a pad to start</div>
+
+  <div class="pad-container" id="padContainer">
+    <!-- パッドはJSで生成 -->
+  </div>
+
+  <div class="controls">
+    <button class="stop-btn" onclick="stopMusic()">STOP</button>
+  </div>
+
+<script>
+  let audioCtx;
+  let masterGain, reverbNode, delayNode, delayFeedback;
+  let isPlaying = false;
+  let currentScheduleId;
+  let nextNoteTime = 0;
+  let currentStep = 0;
+  
+  // 現在の生成パターン（32ステップ = 2小節）
+  let currentSequence = [];
+  let currentInstrument = 0;
+
+  // Cメジャースケール (2オクターブ +α)
+  // より「曲」らしくするためペンタトニックではなくダイアトニックスケールを使用
+  const scale = [
+    261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, // C4 - B4
+    523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, // C5 - B5
+    1046.50, 1174.66, 1318.51 // C6 - E6
+  ];
+
+  // --- 5つの個性的な音色定義 ---
+  const instruments = [
+    { name: "Dreamy Pad", type: "sine", attack: 0.4, decay: 0.5, sustain: 0.6, release: 2.0, filterFreq: 1000, delaySend: 0.4, reverbSend: 0.9 },
+    { name: "Pluck Seq", type: "square", attack: 0.005, decay: 0.15, sustain: 0.0, release: 0.1, filterFreq: 1500, delaySend: 0.6, reverbSend: 0.3 },
+    { name: "Lead Melody", type: "sawtooth", attack: 0.03, decay: 0.3, sustain: 0.4, release: 0.5, filterFreq: 2500, delaySend: 0.4, reverbSend: 0.5 },
+    { name: "Crystal Bell", type: "sine", attack: 0.01, decay: 0.8, sustain: 0.1, release: 1.5, filterFreq: 3000, delaySend: 0.7, reverbSend: 0.8 },
+    { name: "Bass Groove", type: "triangle", attack: 0.02, decay: 0.3, sustain: 0.5, release: 0.4, filterFreq: 400, delaySend: 0.0, reverbSend: 0.1 }
+  ];
+
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.5;
+    masterGain.connect(audioCtx.destination);
+
+    // リバーブ生成
+    let sampleRate = audioCtx.sampleRate;
+    let length = sampleRate * 3.0; // 3秒の残響
+    let impulse = audioCtx.createBuffer(2, length, sampleRate);
+    for (let i = 0; i < length; i++) {
+      let decay = Math.exp(-i / (sampleRate * 0.4));
+      impulse.getChannelData(0)[i] = (Math.random() * 2 - 1) * decay;
+      impulse.getChannelData(1)[i] = (Math.random() * 2 - 1) * decay;
+    }
+    reverbNode = audioCtx.createConvolver();
+    reverbNode.buffer = impulse;
+    reverbNode.connect(masterGain);
+
+    // ディレイ生成 (付点8分音符風のディレイ)
+    delayNode = audioCtx.createDelay(1.0);
+    delayNode.delayTime.value = 0.375;
+    delayFeedback = audioCtx.createGain();
+    delayFeedback.gain.value = 0.45;
+    delayNode.connect(delayFeedback);
+    delayFeedback.connect(delayNode);
+    delayNode.connect(masterGain);
+  }
+
+  function playNote(freq, time, inst, isAccent = false) {
+    const osc = audioCtx.createOscillator();
+    osc.type = inst.type;
+    osc.frequency.setValueAtTime(freq, time);
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = inst.name === "Crystal Bell" ? "highpass" : "lowpass";
+    // アクセント（拍の頭など）はフィルターを開いて明るくする
+    filter.frequency.setValueAtTime(isAccent ? inst.filterFreq * 1.5 : inst.filterFreq, time);
+
+    const vca = audioCtx.createGain();
+    
+    const delaySend = audioCtx.createGain();
+    delaySend.gain.value = inst.delaySend;
+    const reverbSend = audioCtx.createGain();
+    reverbSend.gain.value = inst.reverbSend;
+
+    osc.connect(filter); filter.connect(vca);
+    vca.connect(masterGain);
+    vca.connect(delaySend); delaySend.connect(delayNode);
+    vca.connect(reverbSend); reverbSend.connect(reverbNode);
+
+    // ADSR
+    const noteLength = 0.25; 
+    vca.gain.setValueAtTime(0, time);
+    vca.gain.linearRampToValueAtTime(isAccent ? 1.0 : 0.7, time + inst.attack);
+    vca.gain.linearRampToValueAtTime(inst.sustain, time + inst.attack + inst.decay);
+    vca.gain.setValueAtTime(inst.sustain, time + noteLength);
+    vca.gain.linearRampToValueAtTime(0, time + noteLength + inst.release);
+
+    osc.start(time);
+    osc.stop(time + noteLength + inst.release);
+  }
+
+  // --- モチーフ（楽曲構造）生成ロジック ---
+  function generateMotifSequence() {
+    // 1. 8ステップ（半小節）の「基本モチーフ（A）」を作る
+    const motifA = [];
+    const density = 0.6; // 音が鳴る確率
+    for (let i = 0; i < 8; i++) {
+      if (i === 0 || Math.random() < density) { // 頭の拍は必ず鳴らしてリズムを安定させる
+        // スケールのルート(0)を中心に、±3度の範囲でメロディを動かす
+        const note = 7 + Math.floor(Math.random() * 7 - 3); // C5付近
+        motifA.push({ active: true, note: note, isAccent: i === 0 });
+      } else {
+        motifA.push({ active: false });
+      }
+    }
+
+    // 2. モチーフAの「バリエーション（A'）」を作る（音程を3度上げるなどして展開させる）
+    const shiftPattern = (motif, shiftAmt) => {
+      return motif.map(step => 
+        step.active ? { active: true, note: step.note + shiftAmt, isAccent: step.isAccent } : { active: false }
+      );
+    };
+    const motifA_dash = shiftPattern(motifA, 2); // 3度上へシフト
+
+    // 3. 展開用の「モチーフ（B）」（サビ・オチ）を作る。リズムを変える。
+    const motifB = [];
+    for (let i = 0; i < 8; i++) {
+      if (i % 2 === 0 || Math.random() < 0.4) {
+        const note = 7 + Math.floor(Math.random() * 9 - 4); // 少しダイナミックに動かす
+        motifB.push({ active: true, note: note, isAccent: i === 0 });
+      } else {
+        motifB.push({ active: false });
+      }
+    }
+
+    // 4. 曲の構造を組み立てる (32ステップ = 2小節)
+    // 構成: [A] -> [A'] -> [A] -> [B] (王道のメロディ展開)
+    const phrase1 = [...motifA, ...motifA_dash]; // 1小節目
+    const phrase2 = [...motifA, ...motifB];      // 2小節目
+    
+    // コード進行（ベース音のシフト）の適用
+    // 1小節目: I (C), 2小節目: IV (F) または V (G) にシフトして進行感を生む
+    const chordProgression = [0, 0, 3, -4]; // 8ステップごとの相対的なコードシフト(I - I - IV - Vなど)
+    
+    currentSequence = [...phrase1, ...phrase2].map((step, index) => {
+      if (!step.active) return step;
+      // 8ステップ（半小節）ごとにコードの響きを変える
+      const chordShift = chordProgression[Math.floor(index / 8)];
+      let finalNote = step.note + chordShift;
+      
+      // スケール範囲内に収める
+      if (finalNote < 0) finalNote = 0;
+      if (finalNote >= scale.length) finalNote = scale.length - 1;
+      
+      return { active: true, note: finalNote, isAccent: step.isAccent };
+    });
+  }
+
+  function schedule() {
+    const tempo = 110 + Math.floor(Math.random() * 30); // 110〜140 BPM
+    const stepTime = 60 / tempo / 4; // 16分音符
+
+    while (nextNoteTime < audioCtx.currentTime + 0.1) {
+      const step = currentSequence[currentStep];
+      
+      if (step.active) {
+        const freq = scale[step.note];
+        playNote(freq, nextNoteTime, instruments[currentInstrument], step.isAccent);
+      }
+      
+      nextNoteTime += stepTime;
+      currentStep = (currentStep + 1) % 32; // 32ステップループ
+    }
+    currentScheduleId = requestAnimationFrame(schedule);
+  }
+
+  function startMusic() {
+    initAudio();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    stopMusic(); 
+    
+    currentInstrument = Math.floor(Math.random() * instruments.length);
+    generateMotifSequence(); // モチーフと曲構造の生成
+    
+    document.getElementById('status').innerText = `🎵 Playing: ${instruments[currentInstrument].name}`;
+    
+    isPlaying = true;
+    currentStep = 0;
+    nextNoteTime = audioCtx.currentTime + 0.05;
+    schedule();
+  }
+
+  function stopMusic() {
+    isPlaying = false;
+    cancelAnimationFrame(currentScheduleId);
+    document.getElementById('status').innerText = "Stopped";
+    document.querySelectorAll('.pad').forEach(p => p.classList.remove('active'));
+  }
+
+  // 5x5 UI生成
+  const container = document.getElementById('padContainer');
+  for (let i = 0; i < 25; i++) {
+    const pad = document.createElement('div');
+    pad.className = 'pad';
+    const trigger = (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.pad').forEach(p => p.classList.remove('active'));
+      pad.classList.add('active');
+      startMusic();
+    };
+    pad.addEventListener('mousedown', trigger);
+    pad.addEventListener('touchstart', trigger, {passive: false});
+    container.appendChild(pad);
+  }
+</script>
+
+</body>
+</html>
