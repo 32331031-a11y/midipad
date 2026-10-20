@@ -17,7 +17,6 @@
             height: 100vh;
             margin: 0;
             font-family: sans-serif;
-            /* スワイプ時の画面スクロールなどを完全に防ぐ */
             touch-action: none; 
             user-select: none;
             -webkit-user-select: none;
@@ -39,7 +38,7 @@
             font-size: 13px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.1s; /* なぞったときの反応を良くするため少し短く */
+            transition: all 0.1s;
             opacity: 0.4;
             border: 3px solid transparent;
             text-align: center;
@@ -60,7 +59,6 @@
         .group-rhythm { background-color: #ffa502; color: white; }
         .group-chord  { background-color: #2ed573; color: white; }
         .group-inst   { background-color: #1e90ff; color: white; }
-        /* コントロール列は最初から明るくする */
         .group-ctrl   { background-color: #57606f; color: white; opacity: 1; } 
         
         .label {
@@ -70,7 +68,7 @@
         }
         #status {
             margin-top: 15px;
-            font-size: 18px;
+            font-size: 16px;
             height: 30px;
             color: #00ff88;
         }
@@ -80,7 +78,8 @@
 
     <h2>Music Sequencer Pad</h2>
     <div id="pad-container"></div>
-    <div id="status">なぞってパートを選び「再生」を押す</div>
+    <!-- テキストを修正しました -->
+    <div id="status">タップやなぞりでパートを選び「再生」を押す</div>
 
     <script>
         window.onload = function() {
@@ -123,4 +122,149 @@
             let currentSequence = null;
 
             const container = document.getElementById('pad-container');
-            const rows =
+            const rows = [
+                { type: 'melody', label: 'メロディ', class: 'group-melody', data: options.melody },
+                { type: 'rhythm', label: 'リズム', class: 'group-rhythm', data: options.rhythm },
+                { type: 'chord',  label: '展開(進行)', class: 'group-chord', data: options.chord },
+                { type: 'inst',   label: '楽器', class: 'group-inst', data: options.instrument }
+            ];
+
+            // --- 1〜4行目（設定用パッド）の描画 ---
+            rows.forEach((rowConfig) => {
+                rowConfig.data.forEach((item, colIndex) => {
+                    const pad = document.createElement('div');
+                    pad.className = `pad ${rowConfig.class}`;
+                    pad.id = `${rowConfig.type}-${colIndex}`;
+                    
+                    // なぞり操作用のデータ
+                    pad.dataset.type = rowConfig.type;
+                    pad.dataset.index = colIndex;
+
+                    if (colIndex === 0) pad.classList.add('selected');
+                    pad.innerHTML = `<div class="label">${rowConfig.label}</div><div>${item.name}</div>`;
+                    
+                    // 【基本】普通にタップしたときの処理
+                    pad.addEventListener('click', () => selectPad(rowConfig.type, colIndex));
+
+                    container.appendChild(pad);
+                });
+            });
+
+            // --- 5行目（コントロール）の描画 ---
+            const controls = [
+                { name: "▶ 再生", action: playMusic },
+                { name: "■ 停止", action: stopMusic },
+                { name: "🎲 おまかせ", action: randomSelect },
+                { name: "🐢 遅く", action: () => { Tone.Transport.bpm.value -= 10; updateStatus("テンポ: " + Math.round(Tone.Transport.bpm.value)); } },
+                { name: "🐇 速く", action: () => { Tone.Transport.bpm.value += 10; updateStatus("テンポ: " + Math.round(Tone.Transport.bpm.value)); } }
+            ];
+
+            controls.forEach(ctrl => {
+                const pad = document.createElement('div');
+                pad.className = 'pad group-ctrl';
+                pad.textContent = ctrl.name;
+                // コントロールはタップでのみ反応
+                pad.addEventListener('click', async () => {
+                    await Tone.start(); 
+                    ctrl.action();
+                });
+                container.appendChild(pad);
+            });
+
+            // --- 【追加機能】なぞった「ときにも」反応させる処理 ---
+            let isDragging = false;
+            document.addEventListener('mousedown', () => isDragging = true);
+            document.addEventListener('mouseup', () => isDragging = false);
+
+            function handlePointerEnter(element) {
+                if (element && element.classList.contains('pad') && element.dataset.type) {
+                    const type = element.dataset.type;
+                    const index = parseInt(element.dataset.index, 10);
+                    selectPad(type, index);
+                }
+            }
+
+            // PCでドラッグした時の反応
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging) handlePointerEnter(e.target.closest('.pad'));
+            });
+
+            // タブレットやスマホで指を滑らせた時の反応
+            container.addEventListener('touchmove', (e) => {
+                e.preventDefault(); 
+                const touch = e.touches[0];
+                const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (elementUnderFinger) {
+                    handlePointerEnter(elementUnderFinger.closest('.pad'));
+                }
+            }, { passive: false });
+
+            // --- 音楽制御ロジック ---
+            function selectPad(type, index) {
+                let stateKey = type === 'inst' ? 'instrument' : type;
+                if (state[stateKey] === index) return;
+                
+                state[stateKey] = index;
+                for (let i = 0; i < 5; i++) {
+                    const targetPad = document.getElementById(`${type}-${i}`);
+                    if(targetPad) targetPad.classList.remove('selected');
+                }
+                const selectedPad = document.getElementById(`${type}-${index}`);
+                if(selectedPad) selectedPad.classList.add('selected');
+            }
+
+            function updateStatus(text) {
+                document.getElementById('status').textContent = text;
+            }
+
+            function randomSelect() {
+                selectPad('melody', Math.floor(Math.random() * 5));
+                selectPad('rhythm', Math.floor(Math.random() * 5));
+                selectPad('chord', Math.floor(Math.random() * 5));
+                selectPad('inst', Math.floor(Math.random() * 5));
+                updateStatus("ランダムに組み合わせました！");
+            }
+
+            function playMusic() {
+                stopMusic(); 
+
+                const selMelody = options.melody[state.melody].notes;
+                const selRhythm = options.rhythm[state.rhythm].val;
+                const selChordProg = options.chord[state.chord].progressions; 
+                const selInst   = options.instrument[state.instrument].val;
+
+                let SynthType = Tone[selInst] || Tone.Synth;
+                melodySynth = new Tone.PolySynth(SynthType).toDestination();
+                chordSynth = new Tone.PolySynth(Tone.AMSynth, { volume: -12 }).toDestination();
+
+                let chordIndex = 0;
+                Tone.Transport.scheduleRepeat((time) => {
+                    let currentChord = selChordProg[chordIndex % selChordProg.length];
+                    chordSynth.triggerAttackRelease(currentChord, "2n", time);
+                    chordIndex++;
+                }, "1m"); 
+
+                currentSequence = new Tone.Sequence((time, note) => {
+                    if (note !== null) { 
+                        let dur = Array.isArray(selRhythm) ? selRhythm[Math.floor(Math.random() * selRhythm.length)] : selRhythm;
+                        melodySynth.triggerAttackRelease(note, dur, time);
+                    }
+                }, selMelody, typeof selRhythm === 'string' ? selRhythm : "8n").start(Tone.now());
+
+                Tone.Transport.bpm.value = 120;
+                Tone.Transport.start();
+                updateStatus("🎶 再生中...");
+            }
+
+            function stopMusic() {
+                Tone.Transport.stop();
+                Tone.Transport.cancel(0); 
+                if (currentSequence) currentSequence.dispose();
+                if (melodySynth) melodySynth.dispose();
+                if (chordSynth) chordSynth.dispose();
+                updateStatus("⏹ 停止しました");
+            }
+        };
+    </script>
+</body>
+</html>
