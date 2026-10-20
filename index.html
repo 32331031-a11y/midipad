@@ -17,48 +17,62 @@
             height: 100vh;
             margin: 0;
             font-family: sans-serif;
-            touch-action: none; 
+            touch-action: none; /* 全体のスワイプ更新などを防止 */
             user-select: none;
             -webkit-user-select: none;
         }
+        
+        h2 {
+            margin: 10px 0;
+            font-size: 20px;
+        }
+
+        /* 5x5のグリッドコンテナ */
         #pad-container {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(5, 1fr); /* 確実に高さを確保 */
+            grid-template-rows: repeat(5, 1fr);
             gap: 8px;
-            /* どんなタブレットでも確実に正方形になる安全な書き方 */
             width: 95vw;
             height: 95vw;
-            max-width: 600px;
-            max-height: 600px;
-            touch-action: none; 
+            max-width: 500px;
+            max-height: 500px;
+            touch-action: none; /* コンテナ内のスクロールを無効化し、なぞりを優先 */
+            background-color: #2a2a2a;
+            padding: 10px;
+            border-radius: 12px;
+            box-sizing: border-box;
         }
+
         .pad {
             border-radius: 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.1s;
-            opacity: 0.4;
-            border: 3px solid transparent;
+            opacity: 0.3;
+            border: 2px solid transparent;
             text-align: center;
             box-sizing: border-box;
-            overflow: hidden;
+            transition: transform 0.1s, opacity 0.1s;
         }
+
         .pad.selected {
             opacity: 1;
             transform: scale(1.05);
             border-color: white;
             box-shadow: 0 0 10px currentColor;
+            z-index: 2;
         }
+
         .pad:active {
             transform: scale(0.95);
         }
         
+        /* 各行のテーマカラー */
         .group-melody { background-color: #ff4757; color: white; }
         .group-rhythm { background-color: #ffa502; color: white; }
         .group-chord  { background-color: #2ed573; color: white; }
@@ -70,6 +84,7 @@
             opacity: 0.8;
             margin-bottom: 2px;
         }
+
         #status {
             margin-top: 15px;
             font-size: 14px;
@@ -80,16 +95,14 @@
 </head>
 <body>
 
-    <h2>Music Sequencer Pad</h2>
+    <h2>Music Sequencer</h2>
     <div id="pad-container"></div>
-    <div id="status">タップやなぞりでパートを選び「再生」を押す</div>
+    <div id="status">準備完了：なぞって選んで再生！</div>
 
     <script>
-        // 画面の準備が完全に整ってからプログラムを動かす
-        document.addEventListener("DOMContentLoaded", function() {
-            
-            // どんな古いブラウザでも動くように「var」で統一
-            var options = {
+        // エラーで止まらないようにtry-catchで全体を囲む
+        try {
+            const options = {
                 melody: [
                     { name: "ドレミ", notes: ["C4", "E4", null, "G4", "B4", "C5", null, "G4"] },
                     { name: "せつない", notes: ["A3", "C4", "E4", null, "G4", "A4", "E4", null] },
@@ -120,131 +133,127 @@
                 ]
             };
 
-            var state = { melody: 0, rhythm: 0, chord: 0, instrument: 0 };
-            var melodySynth = null;
-            var chordSynth = null;
-            var currentSequence = null;
-            var container = document.getElementById('pad-container');
+            const state = { melody: 0, rhythm: 0, chord: 0, instrument: 0 };
+            let melodySynth = null;
+            let chordSynth = null;
+            let currentSequence = null;
 
-            var rows = [
+            const container = document.getElementById('pad-container');
+            container.innerHTML = ''; // 中身を一度クリア
+
+            const rows = [
                 { type: 'melody', label: 'メロディ', class: 'group-melody', data: options.melody },
                 { type: 'rhythm', label: 'リズム', class: 'group-rhythm', data: options.rhythm },
-                { type: 'chord',  label: '進行', class: 'group-chord', data: options.chord },
+                { type: 'chord',  label: 'コード', class: 'group-chord', data: options.chord },
                 { type: 'inst',   label: '楽器', class: 'group-inst', data: options.instrument }
             ];
 
             // --- 1〜4行目（パッド）の生成 ---
-            rows.forEach(function(rowConfig) {
-                rowConfig.data.forEach(function(item, colIndex) {
-                    var pad = document.createElement('div');
-                    pad.className = "pad " + rowConfig.class;
-                    pad.id = rowConfig.type + "-" + colIndex;
+            rows.forEach((rowConfig) => {
+                rowConfig.data.forEach((item, colIndex) => {
+                    const pad = document.createElement('div');
+                    pad.className = `pad ${rowConfig.class}`;
+                    pad.id = `${rowConfig.type}-${colIndex}`;
                     
-                    // なぞり操作用のデータ
-                    pad.setAttribute("data-type", rowConfig.type);
-                    pad.setAttribute("data-index", colIndex);
+                    // なぞり判定用のデータ
+                    pad.dataset.type = rowConfig.type;
+                    pad.dataset.index = colIndex;
 
                     if (colIndex === 0) pad.classList.add('selected');
-                    pad.innerHTML = "<div class='label'>" + rowConfig.label + "</div><div>" + item.name + "</div>";
                     
+                    pad.innerHTML = `<div class="label">${rowConfig.label}</div><div>${item.name}</div>`;
                     container.appendChild(pad);
                 });
             });
 
             // --- 5行目（コントロール）の生成 ---
-            var controls = [
+            const controls = [
                 { name: "▶ 再生", action: playMusic },
                 { name: "■ 停止", action: stopMusic },
                 { name: "🎲 おまかせ", action: randomSelect },
-                { name: "🐢 遅く", action: function() { Tone.Transport.bpm.value -= 10; updateStatus("テンポ: " + Math.round(Tone.Transport.bpm.value)); } },
-                { name: "🐇 速く", action: function() { Tone.Transport.bpm.value += 10; updateStatus("テンポ: " + Math.round(Tone.Transport.bpm.value)); } }
+                { name: "🐢 遅く", action: () => changeTempo(-10) },
+                { name: "🐇 速く", action: () => changeTempo(10) }
             ];
 
-            controls.forEach(function(ctrl) {
-                var pad = document.createElement('div');
+            controls.forEach((ctrl) => {
+                const pad = document.createElement('div');
                 pad.className = 'pad group-ctrl';
                 pad.textContent = ctrl.name;
                 
-                pad.addEventListener('click', function() {
+                pad.addEventListener('click', async () => {
                     if (typeof Tone === 'undefined') {
-                        updateStatus("音の準備中です。数秒お待ちください"); return;
+                        updateStatus("Tone.jsの読み込みに失敗しています");
+                        return;
                     }
-                    // 古いブラウザでもエラーにならない書き方
-                    Tone.start().then(function() {
-                        ctrl.action();
-                    });
+                    await Tone.start();
+                    ctrl.action();
                 });
                 container.appendChild(pad);
             });
 
-
-            // ==========================================
-            // 【安全版】なぞり操作の処理
-            // ==========================================
-            var isDragging = false;
+            // --- なぞり操作（Pointer Events） ---
+            let isDragging = false;
 
             function handlePointerEnter(element) {
-                if (element && element.classList.contains('pad') && element.getAttribute('data-type')) {
-                    var type = element.getAttribute('data-type');
-                    var index = parseInt(element.getAttribute('data-index'), 10);
-                    selectPad(type, index);
+                if (!element) return;
+                const type = element.dataset.type;
+                const indexStr = element.dataset.index;
+                if (type && indexStr !== undefined) {
+                    selectPad(type, parseInt(indexStr, 10));
                 }
             }
 
-            // --- タッチパネル用（スマホ・タブレット） ---
-            document.addEventListener('touchstart', function(e) {
+            // 画面を押したとき
+            document.addEventListener('pointerdown', (e) => {
                 isDragging = true;
-                var touch = e.touches[0];
-                var element = document.elementFromPoint(touch.clientX, touch.clientY);
-                if (element) handlePointerEnter(element.closest('.pad'));
-            }, { passive: false });
-
-            document.addEventListener('touchend', function() { isDragging = false; });
-            document.addEventListener('touchcancel', function() { isDragging = false; });
-
-            document.addEventListener('touchmove', function(e) {
-                // パッドの上をなぞっている時は画面スクロールを止める
-                if (e.target.closest('#pad-container')) {
-                    e.preventDefault();
-                }
-                if (isDragging) {
-                    var touch = e.touches[0];
-                    var element = document.elementFromPoint(touch.clientX, touch.clientY);
-                    if (element) handlePointerEnter(element.closest('.pad'));
-                }
-            }, { passive: false });
-
-            // --- マウス用（PCブラウザ） ---
-            document.addEventListener('mousedown', function(e) {
-                isDragging = true;
-                var element = document.elementFromPoint(e.clientX, e.clientY);
-                if (element) handlePointerEnter(element.closest('.pad'));
+                const el = document.elementFromPoint(e.clientX, e.clientY);
+                if (el) handlePointerEnter(el.closest('.pad'));
             });
-            document.addEventListener('mouseup', function() { isDragging = false; });
-            document.addEventListener('mousemove', function(e) {
+
+            // 指を離したとき
+            document.addEventListener('pointerup', () => isDragging = false);
+            document.addEventListener('pointercancel', () => isDragging = false);
+
+            // なぞっているとき
+            document.addEventListener('pointermove', (e) => {
                 if (isDragging) {
-                    var element = document.elementFromPoint(e.clientX, e.clientY);
-                    if (element) handlePointerEnter(element.closest('.pad'));
+                    const el = document.elementFromPoint(e.clientX, e.clientY);
+                    if (el) handlePointerEnter(el.closest('.pad'));
                 }
             });
+
+            // スマホのスクロール防止
+            container.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            }, { passive: false });
 
 
             // --- 音楽制御ロジック ---
             function selectPad(type, index) {
-                var stateKey = type === 'inst' ? 'instrument' : type;
+                const stateKey = type === 'inst' ? 'instrument' : type;
                 if (state[stateKey] === index) return;
                 
                 state[stateKey] = index;
-                for (var i = 0; i < 5; i++) {
-                    var targetPad = document.getElementById(type + "-" + i);
+                // 古い選択を解除
+                for (let i = 0; i < 5; i++) {
+                    const targetPad = document.getElementById(`${type}-${i}`);
                     if(targetPad) targetPad.classList.remove('selected');
                 }
-                var selectedPad = document.getElementById(type + "-" + index);
+                // 新しい選択をハイライト
+                const selectedPad = document.getElementById(`${type}-${index}`);
                 if(selectedPad) selectedPad.classList.add('selected');
             }
 
             function updateStatus(text) {
-                document.getElementById('status').textContent = text;
+                const statusEl = document.getElementById('status');
+                if (statusEl) statusEl.textContent = text;
+            }
+
+            function changeTempo(amount) {
+                if (typeof Tone !== 'undefined') {
+                    Tone.Transport.bpm.value += amount;
+                    updateStatus(`テンポ: ${Math.round(Tone.Transport.bpm.value)}`);
+                }
             }
 
             function randomSelect() {
@@ -258,25 +267,25 @@
             function playMusic() {
                 stopMusic(); 
 
-                var selMelody = options.melody[state.melody].notes;
-                var selRhythm = options.rhythm[state.rhythm].val;
-                var selChordProg = options.chord[state.chord].progressions; 
-                var selInst = options.instrument[state.instrument].val;
+                const selMelody = options.melody[state.melody].notes;
+                const selRhythm = options.rhythm[state.rhythm].val;
+                const selChordProg = options.chord[state.chord].progressions; 
+                const selInst = options.instrument[state.instrument].val;
 
-                var SynthType = Tone[selInst] || Tone.Synth;
+                const SynthType = Tone[selInst] || Tone.Synth;
                 melodySynth = new Tone.PolySynth(SynthType).toDestination();
                 chordSynth = new Tone.PolySynth(Tone.AMSynth, { volume: -12 }).toDestination();
 
-                var chordIndex = 0;
-                Tone.Transport.scheduleRepeat(function(time) {
-                    var currentChord = selChordProg[chordIndex % selChordProg.length];
+                let chordIndex = 0;
+                Tone.Transport.scheduleRepeat((time) => {
+                    const currentChord = selChordProg[chordIndex % selChordProg.length];
                     chordSynth.triggerAttackRelease(currentChord, "2n", time);
                     chordIndex++;
                 }, "1m"); 
 
-                currentSequence = new Tone.Sequence(function(time, note) {
+                currentSequence = new Tone.Sequence((time, note) => {
                     if (note !== null) { 
-                        var dur = Array.isArray(selRhythm) ? selRhythm[Math.floor(Math.random() * selRhythm.length)] : selRhythm;
+                        const dur = Array.isArray(selRhythm) ? selRhythm[Math.floor(Math.random() * selRhythm.length)] : selRhythm;
                         melodySynth.triggerAttackRelease(note, dur, time);
                     }
                 }, selMelody, typeof selRhythm === 'string' ? selRhythm : "8n").start(Tone.now());
@@ -287,14 +296,20 @@
             }
 
             function stopMusic() {
-                Tone.Transport.stop();
-                Tone.Transport.cancel(0); 
-                if (currentSequence) currentSequence.dispose();
-                if (melodySynth) melodySynth.dispose();
-                if (chordSynth) chordSynth.dispose();
+                if (typeof Tone !== 'undefined') {
+                    Tone.Transport.stop();
+                    Tone.Transport.cancel(0); 
+                }
+                if (currentSequence) { currentSequence.dispose(); currentSequence = null; }
+                if (melodySynth) { melodySynth.dispose(); melodySynth = null; }
+                if (chordSynth) { chordSynth.dispose(); chordSynth = null; }
                 updateStatus("⏹ 停止しました");
             }
-        });
+
+        } catch (error) {
+            document.getElementById('status').textContent = "エラーが発生しました: " + error.message;
+            console.error(error);
+        }
     </script>
 </body>
 </html>
