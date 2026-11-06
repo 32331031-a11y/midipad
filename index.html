@@ -176,10 +176,10 @@
             <canvas id="visualizer" class="hidden w-full max-w-md aspect-square bg-slate-900 rounded-[35px] border-8 border-slate-700 shadow-inner"></canvas>
             
             <div id="popup-btn-container" class="mt-8 w-full max-w-md">
-                <a id="open-popup-btn" target="_blank" class="big-btn w-full py-5 bg-purple-400 text-white rounded-3xl font-black text-xl flex items-center justify-center gap-3 cursor-pointer no-underline block text-center">
+                <button id="open-popup-btn" class="big-btn w-full py-5 bg-purple-400 text-white rounded-3xl font-black text-xl flex items-center justify-center gap-3 cursor-pointer">
                     <span class="text-3xl">💻</span>
                     べつのウィンドウでひらく
-                </a>
+                </button>
             </div>
         </div>
 
@@ -749,25 +749,38 @@
                 popupBtn.href = URL.createObjectURL(blob);
             }
 
-            // ホバーやタッチ時に事前にリンクを生成しておく
-            popupBtn.addEventListener('mouseenter', preparePopup);
-            popupBtn.addEventListener('touchstart', preparePopup, {passive: true});
-
+            // Popup logic (Window.open approach)
+            const popupBtn = document.getElementById('open-popup-btn');
+            
             popupBtn.addEventListener('click', (e) => {
-                if (!popupBtn.href) preparePopup();
+                // Open a standalone popup window
+                const popupWidth = Math.min(window.screen.width * 0.9, 600);
+                const popupHeight = Math.min(window.screen.height * 0.9, 600);
+                const popup = window.open('', 'PadWindow', `width=${popupWidth},height=${popupHeight},menubar=no,toolbar=no,location=no,status=no,resizable=yes`);
                 
-                // --- メイン画面のUIをビジュアルモードに切り替える ---
-                document.getElementById('pad-grid-container').style.display = 'none';
-                document.getElementById('popup-btn-container').style.display = 'none';
-                document.getElementById('pad-header').innerHTML = '<h2 class="text-3xl font-black text-sky-500" style="-webkit-text-stroke: 1px #fff;">✨ ビジュアル ✨</h2>';
-                
-                const canvas = document.getElementById('visualizer');
-                canvas.classList.remove('hidden');
-                canvas.width = canvas.clientWidth;
-                canvas.height = canvas.clientHeight;
-                
-                if(!animFrameId) {
-                    animateVisualizer();
+                if (popup) {
+                    let htmlContent = "<!DOCTYPE html>\n<html>\n" + document.documentElement.innerHTML + "\n</html>";
+                    htmlContent = htmlContent.replace('<head>', '<head><script>window.IS_PAD_ONLY = true;<\/script>');
+                    popup.document.open();
+                    popup.document.write(htmlContent);
+                    popup.document.close();
+
+                    // --- メイン画面のUIをビジュアルモードに切り替える ---
+                    document.getElementById('pad-grid-container').style.display = 'none';
+                    document.getElementById('popup-btn-container').style.display = 'none';
+                    document.getElementById('pad-header').innerHTML = '<h2 class="text-3xl font-black text-sky-500" style="-webkit-text-stroke: 1px #fff;">✨ ビジュアル ✨</h2>';
+                    
+                    const canvas = document.getElementById('visualizer');
+                    canvas.classList.remove('hidden');
+                    canvas.width = canvas.clientWidth;
+                    canvas.height = canvas.clientHeight;
+                    
+                    if(!animFrameId) {
+                        animateVisualizer();
+                    }
+                } else {
+                    // Alert if popup was blocked by the browser
+                    alert("ポップアップがブロックされました！\nブラウザの設定でポップアップを許可してから、もう一度お試しください。");
                 }
             });
 
