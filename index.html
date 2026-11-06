@@ -3,190 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Generative Pad Synth</title>
+    <title>Toy Box Pad Synth</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;900&display=swap');
         
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #fdf4ff;
+            background-image: radial-gradient(#fbcfe8 8px, transparent 8px);
+            background-size: 40px 40px;
+            color: #475569;
             overflow-x: hidden;
-            touch-action: manipulation; /* Prevent double-tap zoom */
+            touch-action: manipulation;
+            margin: 0;
         }
 
-        /* Prevent scrolling when interacting with the grid on mobile */
+        /* Prevent scrolling when interacting with the grid */
         #pad-grid-container {
             touch-action: none;
         }
 
-        .pad {
-            transition: transform 0.05s ease, box-shadow 0.1s ease, background-color 0.1s ease;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 4px 6px -1px rgba(0,0,0,0.3);
+        .toy-box {
+            background: #ffffff;
+            border: 8px solid #fbcfe8;
+            border-radius: 40px;
+            box-shadow: 0 16px 0 #f9a8d4, 0 24px 30px rgba(0,0,0,0.15);
         }
+
+        .toy-panel {
+            background: #f8fafc;
+            border: 6px solid #cbd5e1;
+            border-radius: 30px;
+            box-shadow: inset 0 8px 0 rgba(255,255,255,0.8), 0 8px 0 #94a3b8;
+        }
+
+        .pad-grid {
+            background: #e2e8f0;
+            border: 8px solid #cbd5e1;
+            border-radius: 35px;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.15);
+        }
+
+        /* Chunky Toy Pads */
+        .pad {
+            border-radius: 20px;
+            border: 4px solid rgba(255,255,255,0.7);
+            transition: transform 0.05s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.05s, filter 0.1s;
+            cursor: pointer;
+        }
+        
+        /* Column Colors */
+        .pad-col-0 { background: #ff6b6b; box-shadow: 0 10px 0 #c92a2a; }
+        .pad-col-1 { background: #fcc419; box-shadow: 0 10px 0 #e67700; }
+        .pad-col-2 { background: #51cf66; box-shadow: 0 10px 0 #2b8a3e; }
+        .pad-col-3 { background: #339af0; box-shadow: 0 10px 0 #1864ab; }
+        .pad-col-4 { background: #cc5de8; box-shadow: 0 10px 0 #862e9c; }
 
         .pad.active {
-            transform: scale(0.92);
-            box-shadow: 0 0 20px currentColor, inset 0 0 5px rgba(255,255,255,0.5);
-            filter: brightness(1.5);
+            transform: translateY(10px);
+            filter: brightness(1.2);
         }
+        /* Remove shadow when pressed down */
+        .pad.active.pad-col-0 { box-shadow: 0 0px 0 #c92a2a; }
+        .pad.active.pad-col-1 { box-shadow: 0 0px 0 #e67700; }
+        .pad.active.pad-col-2 { box-shadow: 0 0px 0 #2b8a3e; }
+        .pad.active.pad-col-3 { box-shadow: 0 0px 0 #1864ab; }
+        .pad.active.pad-col-4 { box-shadow: 0 0px 0 #862e9c; }
 
-        /* Custom Slider Styling */
+        /* Chunky Toy Sliders */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
             background: transparent;
+            margin: 15px 0;
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
+            height: 44px;
+            width: 44px;
             border-radius: 50%;
-            background: #38bdf8;
+            background: #fff;
+            border: 6px solid #0ea5e9;
             cursor: pointer;
-            margin-top: -6px;
-            box-shadow: 0 0 5px #38bdf8;
+            margin-top: -14px;
+            box-shadow: 0 6px 0 #0284c7, 0 10px 10px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(0.9) translateY(4px);
+            box-shadow: 0 2px 0 #0284c7, 0 4px 5px rgba(0,0,0,0.2);
         }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 4px;
-            cursor: pointer;
-            background: #334155;
-            border-radius: 2px;
+            height: 20px;
+            background: #cbd5e1;
+            border-radius: 10px;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.3);
         }
-        input[type=range]:focus {
-            outline: none;
+        input[type=range]:focus { outline: none; }
+
+        /* Big Buttons */
+        .big-btn {
+            border: 6px solid rgba(0,0,0,0.1);
+            box-shadow: 0 8px 0 rgba(0,0,0,0.2);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .big-btn:active {
+            transform: translateY(8px);
+            box-shadow: 0 0px 0 rgba(0,0,0,0.2);
+        }
+
+        /* Pad Only Mode (Popup Window) */
+        .pad-only-mode {
+            padding: 0 !important;
+            margin: 0 !important;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fdf4ff;
+        }
+        .pad-only-mode .pad-grid {
+            width: 95vmin !important;
+            height: 95vmin !important;
+            max-width: none !important;
+            border-width: 12px;
+            border-radius: 40px;
+            padding: 16px;
+        }
+        .pad-only-mode .pad {
+            border-radius: 25px;
+            border-width: 6px;
         }
 
         /* Initialization Overlay */
-        #init-overlay {
-            backdrop-filter: blur(10px);
-        }
+        #init-overlay { backdrop-filter: blur(8px); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
 
-    <!-- Initialization Overlay (Required for Web Audio API Autoplay Policy) -->
-    <div id="init-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/80">
-        <h1 class="text-4xl md:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-500">
-            Generative Pad
-        </h1>
-        <p class="text-slate-300 mb-8 text-center max-w-md px-4">
-            5x5のインタラクティブな音楽ジェネレーター。<br>タップやスワイプで演奏できます。
-        </p>
-        <button id="start-btn" class="px-8 py-4 bg-sky-500 hover:bg-sky-400 text-white rounded-full font-bold text-xl shadow-[0_0_20px_rgba(14,165,233,0.5)] transition-all transform hover:scale-105">
-            START 🎵
-        </button>
+    <!-- Initialization Overlay -->
+    <div id="init-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/60">
+        <div class="toy-box p-10 flex flex-col items-center text-center">
+            <h1 class="text-4xl md:text-5xl font-black mb-6 text-pink-500 tracking-wider" style="-webkit-text-stroke: 2px #fff;">
+                🎵 おもちゃのパッド 🎵
+            </h1>
+            <p class="text-slate-500 mb-8 text-xl font-bold">
+                タップやスワイプで、おんがくをつくろう！
+            </p>
+            <button id="start-btn" class="big-btn px-10 py-5 bg-sky-400 text-white rounded-full font-black text-2xl">
+                スタート！ 🚀
+            </button>
+        </div>
     </div>
 
-    <div class="w-full max-w-6xl flex flex-col lg:flex-row gap-8 opacity-0 transition-opacity duration-1000" id="main-app">
+    <!-- Main Application Container -->
+    <div class="w-full max-w-6xl flex flex-col lg:flex-row gap-8 opacity-0 transition-opacity duration-700" id="main-app">
         
         <!-- Left Column: Pad Grid -->
-        <div class="flex-1 flex flex-col items-center justify-center">
-            <div id="pad-grid-container" class="grid grid-cols-5 grid-rows-5 gap-2 md:gap-3 w-full max-w-md aspect-square bg-slate-800 p-3 md:p-4 rounded-2xl shadow-2xl border border-slate-700">
+        <div id="pad-container" class="flex-1 flex flex-col items-center justify-center">
+            <div id="pad-header" class="mb-4 text-center">
+                <h2 class="text-3xl font-black text-pink-500" style="-webkit-text-stroke: 1px #fff;">✨ メロディー ✨</h2>
+            </div>
+            
+            <div id="pad-grid-container" class="pad-grid grid grid-cols-5 grid-rows-5 gap-3 md:gap-4 w-full max-w-md aspect-square p-4 md:p-5">
                 <!-- Pads will be injected by JS -->
             </div>
             
-            <div class="mt-8 flex gap-2 w-full max-w-md">
-                <button id="generate-btn" class="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 rounded-xl font-bold text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm md:text-base">
-                    <svg class="w-5 h-5 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                    Generate
-                </button>
-                <button id="auto-beat-btn" class="flex-1 py-3 bg-teal-600 hover:bg-teal-500 rounded-xl font-bold text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1 text-sm md:text-base" title="Auto Random Beat">
-                    🎲 Auto Beat
-                </button>
-                <button id="toggle-rhythm-btn" class="w-12 h-12 md:w-14 md:h-14 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center justify-center transition-colors shadow-lg active:scale-95 flex-shrink-0" title="Toggle Rhythm Loop">
-                    🥁
-                </button>
-            </div>
-            
-            <div class="mt-4 w-full max-w-md">
-                <button id="open-popup-btn" class="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-sky-400 border border-slate-600 shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                    別ウィンドウでパッドを開く
+            <div id="popup-btn-container" class="mt-8 w-full max-w-md">
+                <button id="open-popup-btn" class="big-btn w-full py-5 bg-purple-400 text-white rounded-3xl font-black text-xl flex items-center justify-center gap-3">
+                    <span class="text-3xl">💻</span>
+                    べつのウィンドウでひらく
                 </button>
             </div>
         </div>
 
         <!-- Right Column: Synth Controls -->
-        <div class="flex-1 bg-slate-800/50 p-6 rounded-2xl border border-slate-700 backdrop-blur-sm flex flex-col gap-6">
-            <div>
-                <h2 class="text-2xl font-bold text-sky-400 mb-1 flex justify-between items-end">
-                    <span>Synthesizer</span>
-                    <span id="current-scale-label" class="text-sm font-normal text-slate-400 bg-slate-900 px-2 py-1 rounded">C Minor Pentatonic</span>
-                </h2>
-                <p class="text-xs text-slate-400 mb-4">Current parameters. Auto-updated upon generation.</p>
-            </div>
+        <div id="main-controls" class="flex-1 toy-box p-6 md:p-8 flex flex-col gap-8">
+            
+            <!-- Simple Synth Sliders -->
+            <div class="toy-panel p-6 space-y-6">
+                <h2 class="text-3xl font-black text-sky-500 text-center mb-4">🎹 おとをつくる</h2>
+                
+                <div class="space-y-6">
+                    <!-- Length Slider -->
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xl font-black text-slate-600 flex justify-between">
+                            <span>おとのながさ</span>
+                        </label>
+                        <div class="flex items-center gap-4">
+                            <span class="text-3xl" title="みじかい">🏏</span>
+                            <input type="range" id="simple-length" min="0" max="100" value="50">
+                            <span class="text-3xl" title="ながい">🌊</span>
+                        </div>
+                    </div>
 
-            <!-- Waveform Selector -->
-            <div class="space-y-2">
-                <label class="text-sm font-semibold text-slate-300">Oscillator Waveform</label>
-                <div class="flex gap-2 bg-slate-900 p-1 rounded-lg">
-                    <button class="wave-btn flex-1 py-1 text-xs rounded bg-slate-700 text-white" data-wave="sine">Sine</button>
-                    <button class="wave-btn flex-1 py-1 text-xs rounded hover:bg-slate-800 text-slate-400" data-wave="square">Square</button>
-                    <button class="wave-btn flex-1 py-1 text-xs rounded hover:bg-slate-800 text-slate-400" data-wave="sawtooth">Saw</button>
-                    <button class="wave-btn flex-1 py-1 text-xs rounded hover:bg-slate-800 text-slate-400" data-wave="triangle">Tri</button>
-                </div>
-            </div>
+                    <!-- Tone Slider -->
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xl font-black text-slate-600 flex justify-between">
+                            <span>おとのあかるさ</span>
+                        </label>
+                        <div class="flex items-center gap-4">
+                            <span class="text-3xl" title="モコモコ">☁️</span>
+                            <input type="range" id="simple-tone" min="0" max="100" value="50">
+                            <span class="text-3xl" title="キラキラ">⚡️</span>
+                        </div>
+                    </div>
 
-            <!-- ADSR Envelope -->
-            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 space-y-3">
-                <h3 class="text-sm font-semibold text-indigo-400">ADSR Envelope</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs text-slate-400 flex justify-between">Attack <span id="val-attack">0.1s</span></label>
-                        <input type="range" id="ctrl-attack" min="0.01" max="2" step="0.01" value="0.1">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs text-slate-400 flex justify-between">Decay <span id="val-decay">0.2s</span></label>
-                        <input type="range" id="ctrl-decay" min="0.01" max="2" step="0.01" value="0.2">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs text-slate-400 flex justify-between">Sustain <span id="val-sustain">0.5</span></label>
-                        <input type="range" id="ctrl-sustain" min="0" max="1" step="0.01" value="0.5">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs text-slate-400 flex justify-between">Release <span id="val-release">1.0s</span></label>
-                        <input type="range" id="ctrl-release" min="0.01" max="5" step="0.01" value="1.0">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Filter -->
-            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 space-y-3">
-                <h3 class="text-sm font-semibold text-emerald-400">Lowpass Filter</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs text-slate-400 flex justify-between">Cutoff <span id="val-cutoff">2000Hz</span></label>
-                        <input type="range" id="ctrl-cutoff" min="100" max="10000" step="10" value="2000">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs text-slate-400 flex justify-between">Resonance <span id="val-res">5</span></label>
-                        <input type="range" id="ctrl-res" min="0" max="20" step="0.1" value="5">
+                    <!-- Echo Slider -->
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xl font-black text-slate-600 flex justify-between">
+                            <span>びよよ〜ん (エコー)</span>
+                        </label>
+                        <div class="flex items-center gap-4">
+                            <span class="text-3xl" title="おへや">🏠</span>
+                            <input type="range" id="simple-echo" min="0" max="100" value="30">
+                            <span class="text-3xl" title="うちゅう">🌌</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Effects (Delay & Reverb) -->
-            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 space-y-3">
-                <h3 class="text-sm font-semibold text-pink-400">Effects (Delay & Reverb)</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs text-slate-400 flex justify-between">Delay Time <span id="val-delay-time">0.3s</span></label>
-                        <input type="range" id="ctrl-delay-time" min="0.05" max="1" step="0.05" value="0.3">
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs text-slate-400 flex justify-between">Feedback <span id="val-delay-fb">0.4</span></label>
-                        <input type="range" id="ctrl-delay-fb" min="0" max="0.9" step="0.01" value="0.4">
-                    </div>
-                    <div class="flex flex-col gap-1 col-span-2 mt-2">
-                        <label class="text-xs text-slate-400 flex justify-between">Reverb Mix <span id="val-reverb">0.3</span></label>
-                        <input type="range" id="ctrl-reverb" min="0" max="1" step="0.01" value="0.3">
-                    </div>
+            <!-- Rhythm Machine -->
+            <div class="toy-panel p-6 flex flex-col gap-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-3xl font-black text-emerald-500">🥁 リズム</h2>
+                    <button id="toggle-rhythm-btn" class="big-btn w-20 h-20 bg-emerald-400 text-white rounded-full flex items-center justify-center text-4xl">
+                        ▶️
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 mt-2">
+                    <button class="beat-btn big-btn p-3 bg-emerald-500 text-white rounded-2xl font-black flex flex-col items-center gap-1" data-pattern="0">
+                        <span class="text-3xl">🕺</span>ダンス
+                    </button>
+                    <button class="beat-btn big-btn p-3 bg-slate-300 text-slate-600 rounded-2xl font-black flex flex-col items-center gap-1" data-pattern="1">
+                        <span class="text-3xl">🎸</span>ロック
+                    </button>
+                    <button class="beat-btn big-btn p-3 bg-slate-300 text-slate-600 rounded-2xl font-black flex flex-col items-center gap-1" data-pattern="2">
+                        <span class="text-3xl">🧢</span>ヒップホップ
+                    </button>
+                    <button class="beat-btn big-btn p-3 bg-slate-300 text-slate-600 rounded-2xl font-black flex flex-col items-center gap-1" data-pattern="3">
+                        <span class="text-3xl">🏃</span>かけっこ
+                    </button>
+                    <button class="beat-btn big-btn p-3 bg-slate-300 text-slate-600 rounded-2xl font-black flex flex-col items-center gap-1" data-pattern="4">
+                        <span class="text-3xl">🏮</span>おまつり
+                    </button>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -197,40 +263,77 @@
         var padFrequencies = [];
         let isPointerDown = false;
         let lastTriggeredIndex = -1;
-        let rhythmInterval = null;
+        let noiseBuffer = null;
+
+        // URL Parameters for Separate Window mode
+        const urlParams = new URLSearchParams(window.location.search);
+        const isPadOnly = urlParams.get('padOnly') === 'true' || window.IS_PAD_ONLY === true;
+
+        // Rhythm State
+        let rhythmIntervalId = null;
         let isRhythmPlaying = false;
-        let autoBeatInterval = null;
-        let isAutoBeatPlaying = false;
-        var popupPadWin = null;
+        let currentStep = 0;
+        let currentPatternIdx = 0;
+        let nextNoteTime = 0;
 
-        // Visual Colors for Pads
-        const padColors = [
-            '#ef4444', '#f97316', '#eab308', '#22c55e', '#0ea5e9', 
-            '#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#14b8a6'
-        ];
-        var currentPadColor = '#0ea5e9';
-
-        // Synth Parameters State
+        // Synth Internal Parameters
         const params = {
-            waveform: 'sine',
-            attack: 0.1,
-            decay: 0.2,
-            sustain: 0.5,
+            waveform: 'sawtooth',
+            attack: 0.05,
+            decay: 0.3,
+            sustain: 0.2,
             release: 1.0,
             cutoff: 2000,
             resonance: 5,
-            delayTime: 0.3,
-            delayFeedback: 0.4,
-            reverbMix: 0.3,
+            delayTime: 0.4,
+            delayFeedback: 0.3,
+            reverbMix: 0.2,
             baseNote: 48 // C3
         };
 
-        // Musical Scales (Intervals from Root)
+        // Musical Scales (Pentatonic Only)
         const scales = {
-            'Minor Pentatonic': [0, 3, 5, 7, 10],
             'Major Pentatonic': [0, 2, 4, 7, 9]
         };
-        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+        // Drum Patterns (16 steps)
+        const drumPatterns = [
+            { // 0: Dance
+                name: 'ダンス', bpm: 125,
+                kick:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+                snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                hihat: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0],
+                tom:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+            },
+            { // 1: Rock
+                name: 'ロック', bpm: 100,
+                kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+                snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+                tom:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+            },
+            { // 2: Hip-Hop
+                name: 'ヒップホップ', bpm: 85,
+                kick:  [1,0,0,0, 0,0,0,0, 1,0,0,1, 0,0,0,0],
+                snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+                tom:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+            },
+            { // 3: Fast (Drum & Bass style)
+                name: 'かけっこ', bpm: 165,
+                kick:  [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,0],
+                snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                hihat: [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
+                tom:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+            },
+            { // 4: Matsuri (Tribal Toms)
+                name: 'おまつり', bpm: 115,
+                kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+                snare: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+                hihat: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+                tom:   [1,0,1,0, 1,1,0,0, 1,0,1,0, 1,1,0,0]
+            }
+        ];
 
         // === Initialization & UI Setup ===
         const initBtn = document.getElementById('start-btn');
@@ -238,25 +341,59 @@
         const mainApp = document.getElementById('main-app');
         const gridContainer = document.getElementById('pad-grid-container');
 
-        initBtn.addEventListener('click', async () => {
-            await initAudio();
-            generateScale(); // Initialize initial scale
-            updateUIFromParams();
-            
-            overlay.classList.add('opacity-0');
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                mainApp.classList.remove('opacity-0');
-            }, 500);
-        });
+        // Layout switching for Separate Window mode
+        if (isPadOnly) {
+            overlay.style.display = 'none';
+            document.getElementById('main-controls').style.display = 'none';
+            document.getElementById('pad-header').style.display = 'none';
+            document.getElementById('popup-btn-container').style.display = 'none';
+            document.getElementById('pad-container').classList.remove('flex-1');
+            document.body.classList.add('pad-only-mode');
+            mainApp.classList.remove('opacity-0', 'gap-8');
+            mainApp.classList.add('w-full', 'h-full', 'items-center', 'justify-center');
+            gridContainer.innerHTML = ''; // コピー起動時にパッドが重複するのを防ぐ
+            createPads();
+        } else {
+            // Normal mode
+            initBtn.addEventListener('click', async () => {
+                await initAudio();
+                generateScale(); 
+                updateSynthFromSliders();
+                
+                overlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    mainApp.classList.remove('opacity-0');
+                }, 500);
+            });
+
+            // Listen for messages from the popup window
+            window.addEventListener('message', (e) => {
+                if (e.data && e.data.type === 'playNote') {
+                    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                    if (padFrequencies.length > 0) {
+                        const freq = padFrequencies[e.data.index];
+                        playNote(freq);
+                    }
+                    
+                    const element = document.querySelector(`.pad[data-index="${e.data.index}"]`);
+                    if(element) {
+                        element.classList.add('active');
+                        setTimeout(() => element.classList.remove('active'), 150);
+                    }
+                }
+            });
+
+            createPads();
+        }
 
         function createPads() {
             for (let i = 0; i < 25; i++) {
                 const pad = document.createElement('div');
-                pad.classList.add('pad', 'rounded-xl', 'cursor-pointer', 'bg-slate-700');
+                pad.classList.add('pad');
+                pad.classList.add(`pad-col-${i % 5}`); // Add vertical rainbow column color
                 pad.dataset.index = i;
                 
-                // Mouse Events
                 pad.addEventListener('mousedown', (e) => handlePadTrigger(i, pad));
                 pad.addEventListener('mouseenter', (e) => {
                     if (isPointerDown) handlePadTrigger(i, pad);
@@ -265,25 +402,16 @@
                 gridContainer.appendChild(pad);
             }
 
-            // Global Pointer state
             document.addEventListener('mousedown', () => isPointerDown = true);
-            document.addEventListener('mouseup', () => {
-                isPointerDown = false;
-                lastTriggeredIndex = -1;
-            });
-            document.addEventListener('mouseleave', () => {
-                isPointerDown = false;
-                lastTriggeredIndex = -1;
-            });
+            document.addEventListener('mouseup', () => { isPointerDown = false; lastTriggeredIndex = -1; });
+            document.addEventListener('mouseleave', () => { isPointerDown = false; lastTriggeredIndex = -1; });
 
-            // Touch Events for Mobile Swiping
             gridContainer.addEventListener('touchstart', (e) => {
                 isPointerDown = true;
                 handleTouchMove(e);
             }, { passive: false });
             
             gridContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
-            
             gridContainer.addEventListener('touchend', () => {
                 isPointerDown = false;
                 lastTriggeredIndex = -1;
@@ -291,7 +419,7 @@
         }
 
         function handleTouchMove(e) {
-            e.preventDefault(); // Prevent scrolling
+            e.preventDefault();
             if (!isPointerDown) return;
             const touch = e.touches[0];
             const element = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -306,43 +434,42 @@
         }
 
         function handlePadTrigger(index, element) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const freq = padFrequencies[index];
-            playNote(freq);
+            if (isPadOnly) {
+                // If in separate window, tell the main window to play the sound
+                if (window.opener) {
+                    window.opener.postMessage({ type: 'playNote', index: index }, '*');
+                }
+            } else {
+                // Main window plays sound
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                if (padFrequencies.length > 0) {
+                    const freq = padFrequencies[index];
+                    playNote(freq);
+                }
+            }
             
             // Visual feedback
-            element.style.color = currentPadColor;
             element.classList.add('active');
             setTimeout(() => {
                 element.classList.remove('active');
-                element.style.color = '';
-            }, 200);
+            }, 150);
         }
 
         // === Audio Engine ===
         async function initAudio() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
-            // Master Chain
             masterGain = audioCtx.createGain();
             masterGain.gain.value = 0.8;
             
-            // Effects Chain
             delayNode = audioCtx.createDelay(2.0);
             feedbackGain = audioCtx.createGain();
             
-            // Reverb Matrix
             reverbNode = audioCtx.createConvolver();
             reverbNode.buffer = createReverbBuffer(2.5, 2.0);
             
             dryGain = audioCtx.createGain();
             wetGain = audioCtx.createGain();
-
-            // Routing
-            // Main -> Dry -> Master
-            // Main -> Delay -> Feedback -> Delay
-            // Main -> Delay -> Master
-            // Main -> Reverb -> Wet -> Master
 
             delayNode.connect(feedbackGain);
             feedbackGain.connect(delayNode);
@@ -353,6 +480,14 @@
             
             dryGain.connect(masterGain);
             masterGain.connect(audioCtx.destination);
+
+            // Create Noise Buffer for Drums
+            const bufferSize = audioCtx.sampleRate * 1;
+            noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
 
             updateEffectsNodes();
         }
@@ -372,7 +507,9 @@
             return impulse;
         }
 
+        // === Synthesizer Logic ===
         function playNote(frequency) {
+            if(!audioCtx) return;
             const time = audioCtx.currentTime;
             
             const osc = audioCtx.createOscillator();
@@ -382,33 +519,27 @@
             osc.type = params.waveform;
             osc.frequency.setValueAtTime(frequency, time);
 
-            // Filter settings
             filter.type = 'lowpass';
-            // Slight filter envelope based on attack/decay
-            filter.frequency.setValueAtTime(Math.max(100, params.cutoff / 4), time);
+            filter.frequency.setValueAtTime(Math.max(100, params.cutoff / 2), time);
             filter.frequency.exponentialRampToValueAtTime(params.cutoff, time + params.attack);
-            filter.frequency.exponentialRampToValueAtTime(Math.max(100, params.cutoff * 0.7), time + params.attack + params.decay);
+            filter.frequency.exponentialRampToValueAtTime(Math.max(100, params.cutoff * 0.5), time + params.attack + params.decay);
             filter.Q.value = params.resonance;
 
-            // ADSR Amplitude Envelope
             vca.gain.setValueAtTime(0, time);
             vca.gain.linearRampToValueAtTime(1, time + params.attack);
             vca.gain.exponentialRampToValueAtTime(Math.max(0.01, params.sustain), time + params.attack + params.decay);
-            vca.gain.setValueAtTime(Math.max(0.01, params.sustain), time + params.attack + params.decay + 0.1); // hold
-            vca.gain.exponentialRampToValueAtTime(0.001, time + params.attack + params.decay + params.release + 0.1);
+            vca.gain.setValueAtTime(Math.max(0.01, params.sustain), time + params.attack + params.decay + 0.05);
+            vca.gain.exponentialRampToValueAtTime(0.001, time + params.attack + params.decay + params.release + 0.05);
 
-            // Connections
             osc.connect(filter);
             filter.connect(vca);
             
-            // Route to effects
             vca.connect(dryGain);
             vca.connect(delayNode);
             vca.connect(reverbNode);
 
-            // Play & Cleanup
             osc.start(time);
-            const stopTime = time + params.attack + params.decay + params.release + 0.2;
+            const stopTime = time + params.attack + params.decay + params.release + 0.1;
             osc.stop(stopTime);
             
             setTimeout(() => {
@@ -418,418 +549,216 @@
             }, (stopTime - time) * 1000 + 1000);
         }
 
-        function playKickDrum() {
+        // === Drum Synths ===
+        function playDrum(type, time) {
             if(!audioCtx) return;
-            const time = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
             
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(150, time);
-            osc.frequency.exponentialRampToValueAtTime(0.001, time + 0.5);
-            
-            gain.gain.setValueAtTime(1, time);
-            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
-            
-            osc.connect(gain);
-            // Connect to master directly, bypassing reverb/delay for tight punch
-            gain.connect(masterGain); 
-            
-            osc.start(time);
-            osc.stop(time + 0.5);
+            if (type === 'kick') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.frequency.setValueAtTime(150, time);
+                osc.frequency.exponentialRampToValueAtTime(0.001, time + 0.5);
+                gain.gain.setValueAtTime(1.5, time); // Loud punchy kick
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(time);
+                osc.stop(time + 0.5);
+            } 
+            else if (type === 'snare') {
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = noiseBuffer;
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = 'highpass';
+                noiseFilter.frequency.value = 1000;
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(1.2, time);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noise.start(time);
+                noise.stop(time + 0.2);
+
+                const osc = audioCtx.createOscillator();
+                osc.type = 'triangle';
+                const oscGain = audioCtx.createGain();
+                osc.frequency.setValueAtTime(250, time);
+                oscGain.gain.setValueAtTime(0.8, time);
+                oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+                osc.connect(oscGain);
+                oscGain.connect(audioCtx.destination);
+                osc.start(time);
+                osc.stop(time + 0.2);
+            }
+            else if (type === 'hihat') {
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = noiseBuffer;
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = 'highpass';
+                noiseFilter.frequency.value = 7000;
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.5, time);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noise.start(time);
+                noise.stop(time + 0.05);
+            }
+            else if (type === 'tom') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.frequency.setValueAtTime(200, time);
+                osc.frequency.exponentialRampToValueAtTime(10, time + 0.4);
+                gain.gain.setValueAtTime(1.5, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.4);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(time);
+                osc.stop(time + 0.4);
+            }
         }
 
-        // === Generative Logic ===
-        function midiToFreq(m) {
-            return 440 * Math.pow(2, (m - 69) / 12);
+        // === Rhythm Sequencer ===
+        function scheduleRhythm() {
+            if (!isRhythmPlaying) return;
+            const lookahead = 0.1; 
+            
+            while (nextNoteTime < audioCtx.currentTime + lookahead) {
+                const pat = drumPatterns[currentPatternIdx];
+                if (pat.kick[currentStep]) playDrum('kick', nextNoteTime);
+                if (pat.snare[currentStep]) playDrum('snare', nextNoteTime);
+                if (pat.hihat[currentStep]) playDrum('hihat', nextNoteTime);
+                if (pat.tom[currentStep]) playDrum('tom', nextNoteTime);
+
+                // Advance step
+                const secondsPerBeat = 60.0 / pat.bpm;
+                nextNoteTime += 0.25 * secondsPerBeat; // 16th note
+                currentStep = (currentStep + 1) % 16;
+            }
+            rhythmIntervalId = setTimeout(scheduleRhythm, 25);
         }
 
-        function generateScale() {
-            // Random root note (C2 to B3)
-            params.baseNote = 36 + Math.floor(Math.random() * 24);
-            
-            // Random scale type
-            const scaleKeys = Object.keys(scales);
-            const scaleName = scaleKeys[Math.floor(Math.random() * scaleKeys.length)];
-            const scaleIntervals = scales[scaleName];
-            
-            padFrequencies = [];
-            let currentOctave = 0;
-            
-            for (let i = 0; i < 25; i++) {
-                const intervalIndex = i % scaleIntervals.length;
-                if (i > 0 && intervalIndex === 0) currentOctave++;
+        // === Controls Logic ===
+        if (!isPadOnly) {
+            // Rhythm Toggle
+            document.getElementById('toggle-rhythm-btn').addEventListener('click', (e) => {
+                if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                isRhythmPlaying = !isRhythmPlaying;
+                const btn = e.currentTarget;
                 
-                const midiNote = params.baseNote + scaleIntervals[intervalIndex] + (currentOctave * 12);
-                padFrequencies.push(midiToFreq(midiNote));
-            }
-
-            // Update Label
-            const noteName = noteNames[params.baseNote % 12];
-            document.getElementById('current-scale-label').textContent = `${noteName} ${scaleName}`;
-        }
-
-        function randomizeParameters() {
-            const waves = ['sine', 'square', 'sawtooth', 'triangle'];
-            params.waveform = waves[Math.floor(Math.random() * waves.length)];
-            
-            // Random ADSR (favoring usable musical envelopes)
-            params.attack = Math.random() < 0.5 ? (Math.random() * 0.1) : (Math.random() * 0.8 + 0.1);
-            params.decay = Math.random() * 0.5 + 0.1;
-            params.sustain = Math.random() * 0.8;
-            params.release = Math.random() * 2 + 0.1;
-            
-            // Random Filter
-            params.cutoff = Math.random() * 8000 + 500;
-            params.resonance = Math.random() * 15;
-            
-            // Random Effects
-            // Try to make delay musically timed based on a BPM between 80 and 140
-            const bpm = 80 + Math.random() * 60;
-            const quarterNote = 60 / bpm;
-            const delayMultipliers = [0.25, 0.5, 0.75, 1.0];
-            
-            params.delayTime = quarterNote * delayMultipliers[Math.floor(Math.random() * delayMultipliers.length)];
-            params.delayFeedback = Math.random() * 0.6 + 0.1; // keep it safe from feedback loops
-            params.reverbMix = Math.random() * 0.6;
-
-            // Random Color
-            currentPadColor = padColors[Math.floor(Math.random() * padColors.length)];
-
-            generateScale();
-            updateUIFromParams();
-            updateEffectsNodes();
-            
-            // Rhythmic pulse visual on grid
-            gridContainer.style.borderColor = currentPadColor;
-            gridContainer.style.boxShadow = `0 0 20px ${currentPadColor}40`;
-
-            // Update Popup Window if open
-            if (popupPadWin && !popupPadWin.closed && popupPadWin.updateGridColor) {
-                popupPadWin.updateGridColor(currentPadColor);
-            }
-        }
-
-        function updateEffectsNodes() {
-            if(!audioCtx) return;
-            delayNode.delayTime.value = params.delayTime;
-            feedbackGain.gain.value = params.delayFeedback;
-            
-            wetGain.gain.value = params.reverbMix;
-            dryGain.gain.value = 1 - (params.reverbMix * 0.5); // compensate
-        }
-
-        function updateUIFromParams() {
-            // Update Waveform Buttons
-            document.querySelectorAll('.wave-btn').forEach(btn => {
-                if (btn.dataset.wave === params.waveform) {
-                    btn.classList.replace('bg-transparent', 'bg-slate-700');
-                    btn.classList.replace('text-slate-400', 'text-white');
-                    btn.style.backgroundColor = currentPadColor;
+                if(isRhythmPlaying) {
+                    btn.innerHTML = '⏹️';
+                    btn.classList.replace('bg-emerald-400', 'bg-red-400');
+                    
+                    currentStep = 0;
+                    nextNoteTime = audioCtx.currentTime + 0.05;
+                    scheduleRhythm();
                 } else {
-                    btn.style.backgroundColor = '';
-                    btn.classList.replace('bg-slate-700', 'bg-transparent');
-                    btn.classList.replace('text-white', 'text-slate-400');
+                    btn.innerHTML = '▶️';
+                    btn.classList.replace('bg-red-400', 'bg-emerald-400');
+                    clearTimeout(rhythmIntervalId);
                 }
             });
 
-            // Update Sliders and Labels
-            const map = {
-                'attack': { id: 'attack', val: params.attack, unit: 's', fix: 2 },
-                'decay': { id: 'decay', val: params.decay, unit: 's', fix: 2 },
-                'sustain': { id: 'sustain', val: params.sustain, unit: '', fix: 2 },
-                'release': { id: 'release', val: params.release, unit: 's', fix: 2 },
-                'cutoff': { id: 'cutoff', val: params.cutoff, unit: 'Hz', fix: 0 },
-                'res': { id: 'res', val: params.resonance, unit: '', fix: 1 },
-                'delay-time': { id: 'delay-time', val: params.delayTime, unit: 's', fix: 2 },
-                'delay-fb': { id: 'delay-fb', val: params.delayFeedback, unit: '', fix: 2 },
-                'reverb': { id: 'reverb', val: params.reverbMix, unit: '', fix: 2 }
-            };
+            // Beat Selector
+            document.querySelectorAll('.beat-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Update styling
+                    document.querySelectorAll('.beat-btn').forEach(b => {
+                        b.classList.replace('bg-emerald-500', 'bg-slate-300');
+                        b.classList.replace('text-white', 'text-slate-600');
+                    });
+                    
+                    const targetBtn = e.currentTarget;
+                    targetBtn.classList.replace('bg-slate-300', 'bg-emerald-500');
+                    targetBtn.classList.replace('text-slate-600', 'text-white');
+                    
+                    // Set pattern index
+                    currentPatternIdx = parseInt(targetBtn.dataset.pattern);
+                });
+            });
 
-            for (const key in map) {
-                const el = document.getElementById(`ctrl-${map[key].id}`);
-                const lbl = document.getElementById(`val-${map[key].id}`);
-                if(el && lbl) {
-                    el.value = map[key].val;
-                    lbl.textContent = map[key].val.toFixed(map[key].fix) + map[key].unit;
+            // Mapping Simplified Sliders to Synth Params
+            function updateSynthFromSliders() {
+                const valLen = parseInt(document.getElementById('simple-length').value);
+                const valTone = parseInt(document.getElementById('simple-tone').value);
+                const valEcho = parseInt(document.getElementById('simple-echo').value);
+
+                // Length (0-100) -> Decay (0.1 - 1.5), Release (0.1 - 3.0)
+                params.decay = 0.1 + (valLen / 100) * 1.4;
+                params.release = 0.1 + (valLen / 100) * 2.9;
+
+                // Tone (0-100) -> Cutoff (300 - 8000), Waveform
+                params.cutoff = 300 + (valTone / 100) * 7700;
+                params.waveform = valTone > 50 ? 'sawtooth' : 'sine';
+                params.resonance = 2 + (valTone / 100) * 10;
+
+                // Echo (0-100) -> Delay & Reverb Mix (0 - 0.8)
+                params.delayTime = 0.2 + (valEcho / 100) * 0.4;
+                params.reverbMix = (valEcho / 100) * 0.8;
+                params.delayFeedback = (valEcho / 100) * 0.6;
+                
+                updateEffectsNodes();
+            }
+
+            document.getElementById('simple-length').addEventListener('input', updateSynthFromSliders);
+            document.getElementById('simple-tone').addEventListener('input', updateSynthFromSliders);
+            document.getElementById('simple-echo').addEventListener('input', updateSynthFromSliders);
+
+            function updateEffectsNodes() {
+                if(!audioCtx) return;
+                delayNode.delayTime.value = params.delayTime;
+                feedbackGain.gain.value = params.delayFeedback;
+                wetGain.gain.value = params.reverbMix;
+                dryGain.gain.value = 1 - (params.reverbMix * 0.5); 
+            }
+
+            function generateScale() {
+                params.baseNote = 48; // C3
+                const scaleIntervals = scales['Major Pentatonic'];
+                padFrequencies = [];
+                let currentOctave = 0;
+                
+                for (let i = 0; i < 25; i++) {
+                    const intervalIndex = i % scaleIntervals.length;
+                    if (i > 0 && intervalIndex === 0) currentOctave++;
+                    
+                    const midiNote = params.baseNote + scaleIntervals[intervalIndex] + (currentOctave * 12);
+                    padFrequencies.push(440 * Math.pow(2, (midiNote - 69) / 12));
                 }
             }
-        }
 
-        // === Event Listeners for UI Controls ===
-        document.getElementById('generate-btn').addEventListener('click', () => {
-            randomizeParameters();
-            
-            // Visual bump
-            const btn = document.getElementById('generate-btn');
-            btn.classList.add('scale-95');
-            setTimeout(() => btn.classList.remove('scale-95'), 150);
-        });
-
-        document.getElementById('toggle-rhythm-btn').addEventListener('click', (e) => {
-            isRhythmPlaying = !isRhythmPlaying;
-            const btn = e.currentTarget;
-            if(isRhythmPlaying) {
-                btn.classList.replace('bg-slate-700', 'bg-sky-600');
-                // Calculate ms from delayTime to sync rhythm
-                const intervalTime = params.delayTime * 1000 * 2; // e.g. half notes based on delay
-                rhythmInterval = setInterval(() => {
-                    playKickDrum();
-                    // flash grid slightly
-                    gridContainer.classList.add('brightness-125');
-                    setTimeout(() => gridContainer.classList.remove('brightness-125'), 100);
-                }, intervalTime);
-                playKickDrum(); // Play first beat immediately
-            } else {
-                btn.classList.replace('bg-sky-600', 'bg-slate-700');
-                clearInterval(rhythmInterval);
-            }
-        });
-
-        // === Auto Beat Logic ===
-        function triggerRandomPad() {
-            if (!audioCtx || audioCtx.state === 'suspended') return;
-            const randomIndex = Math.floor(Math.random() * 25);
-            const freq = padFrequencies[randomIndex];
-            playNote(freq);
-            
-            // Visual trigger on main grid
-            const padEl = document.querySelector(`.pad[data-index="${randomIndex}"]`);
-            if(padEl) {
-                padEl.style.color = currentPadColor;
-                padEl.classList.add('active');
-                setTimeout(() => {
-                    padEl.classList.remove('active');
-                    padEl.style.color = '';
-                }, 150);
-            }
-            
-            // Visual trigger on popup window if it exists
-            if (popupPadWin && !popupPadWin.closed) {
-                const popPad = popupPadWin.document.querySelector(`.pad[data-index="${randomIndex}"]`);
-                if (popPad) {
-                    popPad.style.color = currentPadColor;
-                    popPad.classList.add('active');
+            // Popup logic uses document.write to bypass sandbox and Blob URL restrictions
+            document.getElementById('open-popup-btn').addEventListener('click', () => {
+                // まず空のウィンドウを開く
+                const popup = window.open('', 'PadWin', 'width=550,height=550,menubar=no,toolbar=no');
+                
+                if (popup) {
+                    let htmlContent = "<!DOCTYPE html>\n<html>\n" + document.documentElement.innerHTML + "\n</html>";
+                    htmlContent = htmlContent.replace('<head>', '<head><script>window.IS_PAD_ONLY = true;<\/script>');
+                    
+                    // 新しいウィンドウに現在の画面のHTMLを直接書き込む
+                    popup.document.open();
+                    popup.document.write(htmlContent);
+                    popup.document.close();
+                } else {
+                    // alert()の代わりに、画面上部にメッセージボックスを表示
+                    const msgBox = document.createElement('div');
+                    msgBox.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ff4a4a; color:white; padding:15px 30px; border-radius:15px; font-weight:bold; z-index:9999; box-shadow:0 10px 20px rgba(0,0,0,0.2); font-size: 1.2rem; text-align:center;';
+                    msgBox.innerHTML = '⚠️ ウィンドウがブロックされちゃった！<br>ブラウザのURLバーの右上から「許可」してね！';
+                    document.body.appendChild(msgBox);
+                    
+                    // 5秒後にメッセージを消す
                     setTimeout(() => {
-                        popPad.classList.remove('active');
-                        popPad.style.color = '';
-                    }, 150);
-                }
-            }
-        }
-
-        document.getElementById('auto-beat-btn').addEventListener('click', (e) => {
-            if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            isAutoBeatPlaying = !isAutoBeatPlaying;
-            const btn = e.currentTarget;
-            
-            if(isAutoBeatPlaying) {
-                btn.classList.replace('bg-teal-600', 'bg-teal-400');
-                btn.classList.add('shadow-[0_0_15px_rgba(45,212,191,0.6)]');
-                
-                // Set sequence interval (e.g. 16th or 8th notes based on delay time for sync)
-                const intervalTime = (params.delayTime * 1000) / 2;
-                
-                autoBeatInterval = setInterval(() => {
-                    // 60% probability to play a random pad note
-                    if (Math.random() < 0.6) {
-                        triggerRandomPad();
-                    }
-                    // 20% probability to add an extra syncopated kick drum
-                    if (Math.random() < 0.2) {
-                        playKickDrum();
-                    }
-                }, intervalTime);
-            } else {
-                btn.classList.replace('bg-teal-400', 'bg-teal-600');
-                btn.classList.remove('shadow-[0_0_15px_rgba(45,212,191,0.6)]');
-                clearInterval(autoBeatInterval);
-            }
-        });
-
-        // === Popup Window Logic ===
-        document.getElementById('open-popup-btn').addEventListener('click', () => {
-            popupPadWin = window.open('', 'GenerativePads', 'width=500,height=500,menubar=no,toolbar=no');
-            if(!popupPadWin) {
-                alert("ポップアップがブロックされました。ブラウザの設定で許可してください。");
-                return;
-            }
-            
-            const html = `
-                <!DOCTYPE html>
-                <html lang="ja">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-                    <title>Generative Pad</title>
-                    <style>
-                        body { 
-                            background-color: #0f172a; 
-                            touch-action: manipulation; 
-                            display: flex; 
-                            justify-content: center; 
-                            align-items: center; 
-                            min-height: 100vh; 
-                            margin: 0; 
+                        if (msgBox.parentNode) {
+                            msgBox.parentNode.removeChild(msgBox);
                         }
-                        #pad-grid-container { 
-                            touch-action: none; 
-                            width: 100%; 
-                            max-width: 450px; 
-                            aspect-ratio: 1/1; 
-                            display: grid; 
-                            grid-template-columns: repeat(5, 1fr); 
-                            grid-template-rows: repeat(5, 1fr); 
-                            gap: 12px; 
-                            background: #1e293b; 
-                            padding: 16px; 
-                            border-radius: 1rem; 
-                            border: 1px solid #334155;
-                        }
-                        .pad { 
-                            transition: transform 0.05s ease, box-shadow 0.1s ease, background-color 0.1s ease; 
-                            box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 4px 6px -1px rgba(0,0,0,0.3); 
-                            border-radius: 0.75rem; 
-                            cursor: pointer; 
-                            background-color: #334155; 
-                        }
-                        .pad.active { 
-                            transform: scale(0.92); 
-                            box-shadow: 0 0 20px currentColor, inset 0 0 5px rgba(255,255,255,0.5); 
-                            filter: brightness(1.5); 
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div id="pad-grid-container"></div>
-                    <script>
-                        const container = document.getElementById('pad-grid-container');
-                        let isPointerDown = false;
-                        let lastTriggeredIndex = -1;
-
-                        // Create Pads
-                        for (let i = 0; i < 25; i++) {
-                            const pad = document.createElement('div');
-                            pad.classList.add('pad');
-                            pad.dataset.index = i;
-                            
-                            pad.addEventListener('mousedown', () => triggerPad(i, pad));
-                            pad.addEventListener('mouseenter', () => { if(isPointerDown) triggerPad(i, pad); });
-                            container.appendChild(pad);
-                        }
-
-                        // Pointer Events
-                        document.addEventListener('mousedown', () => isPointerDown = true);
-                        document.addEventListener('mouseup', () => { isPointerDown = false; lastTriggeredIndex = -1; });
-                        document.addEventListener('mouseleave', () => { isPointerDown = false; lastTriggeredIndex = -1; });
-
-                        // Touch Events for Mobile Swiping
-                        container.addEventListener('touchstart', (e) => { 
-                            isPointerDown = true; 
-                            handleTouchMove(e); 
-                        }, { passive: false });
-                        container.addEventListener('touchmove', handleTouchMove, { passive: false });
-                        container.addEventListener('touchend', () => { 
-                            isPointerDown = false; 
-                            lastTriggeredIndex = -1; 
-                        });
-
-                        function handleTouchMove(e) {
-                            e.preventDefault(); // Prevent scrolling
-                            if (!isPointerDown) return;
-                            const touch = e.touches[0];
-                            const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                            if (element && element.classList.contains('pad')) {
-                                const index = parseInt(element.dataset.index);
-                                if (index !== lastTriggeredIndex) {
-                                    triggerPad(index, element);
-                                    lastTriggeredIndex = index;
-                                }
-                            }
-                        }
-
-                        function triggerPad(index, element) {
-                            if(window.opener && !window.opener.closed) {
-                                const openerCtx = window.opener.audioCtx;
-                                if(openerCtx && openerCtx.state === 'suspended') openerCtx.resume();
-                                
-                                // Play note on main window
-                                const freq = window.opener.padFrequencies[index];
-                                window.opener.playNote(freq);
-                                
-                                // Visual feedback
-                                const color = window.opener.currentPadColor;
-                                element.style.color = color;
-                                element.classList.add('active');
-                                setTimeout(() => {
-                                    element.classList.remove('active');
-                                    element.style.color = '';
-                                }, 200);
-                            }
-                        }
-                        
-                        // Exposed function to allow main window to sync colors
-                        window.updateGridColor = function(color) {
-                            container.style.borderColor = color;
-                            container.style.boxShadow = "0 0 20px " + color + "40";
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `;
-            popupPadWin.document.open();
-            popupPadWin.document.write(html);
-            popupPadWin.document.close();
-            
-            // Sync initial color
-            popupPadWin.onload = () => {
-                if(window.currentPadColor) {
-                    popupPadWin.updateGridColor(window.currentPadColor);
-                }
-            };
-        });
-
-        // Waveform selection
-        document.querySelectorAll('.wave-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                params.waveform = e.target.dataset.wave;
-                updateUIFromParams();
-            });
-        });
-
-        // Generic binding for all sliders
-        const sliderBindings = {
-            'ctrl-attack': { key: 'attack', lbl: 'val-attack', unit: 's' },
-            'ctrl-decay': { key: 'decay', lbl: 'val-decay', unit: 's' },
-            'ctrl-sustain': { key: 'sustain', lbl: 'val-sustain', unit: '' },
-            'ctrl-release': { key: 'release', lbl: 'val-release', unit: 's' },
-            'ctrl-cutoff': { key: 'cutoff', lbl: 'val-cutoff', unit: 'Hz' },
-            'ctrl-res': { key: 'resonance', lbl: 'val-res', unit: '' },
-            'ctrl-delay-time': { key: 'delayTime', lbl: 'val-delay-time', unit: 's', effectUpdate: true },
-            'ctrl-delay-fb': { key: 'delayFeedback', lbl: 'val-delay-fb', unit: '', effectUpdate: true },
-            'ctrl-reverb': { key: 'reverbMix', lbl: 'val-reverb', unit: '', effectUpdate: true }
-        };
-
-        for (const [id, config] of Object.entries(sliderBindings)) {
-            const el = document.getElementById(id);
-            el.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                params[config.key] = val;
-                
-                // Update label dynamically
-                let displayVal = val;
-                if(config.unit === 'Hz') displayVal = val.toFixed(0);
-                else displayVal = val.toFixed(2);
-                document.getElementById(config.lbl).textContent = displayVal + config.unit;
-
-                if (config.effectUpdate) {
-                    updateEffectsNodes();
+                    }, 5000);
                 }
             });
         }
-
-        // Initialize DOM
-        createPads();
     </script>
 </body>
 </html>
