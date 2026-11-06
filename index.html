@@ -172,9 +172,6 @@
                 <!-- Pads will be injected by JS -->
             </div>
             
-            <!-- 追加: ビジュアルを表示するためのキャンバス (最初は隠しておく) -->
-            <canvas id="visualizer" class="hidden w-full max-w-md aspect-square bg-slate-900 rounded-[35px] border-8 border-slate-700 shadow-inner"></canvas>
-            
             <div id="popup-btn-container" class="mt-8 w-full max-w-md">
                 <button id="open-popup-btn" class="big-btn w-full py-5 bg-purple-400 text-white rounded-3xl font-black text-xl flex items-center justify-center gap-3 cursor-pointer">
                     <span class="text-3xl">💻</span>
@@ -279,10 +276,6 @@
         let currentPatternIdx = 0;
         let nextNoteTime = 0;
 
-        // Visualizer State
-        let particles = [];
-        let animFrameId = null;
-
         // Synth Internal Parameters
         const params = {
             waveform: 'sawtooth',
@@ -381,7 +374,6 @@
                     if (padFrequencies.length > 0) {
                         const freq = padFrequencies[e.data.index];
                         playNote(freq);
-                        if (typeof drawVisualizer === 'function') drawVisualizer(e.data.index, freq); // ビジュアライザ呼び出し
                     }
                     
                     const element = document.querySelector(`.pad[data-index="${e.data.index}"]`);
@@ -453,7 +445,6 @@
                 if (padFrequencies.length > 0) {
                     const freq = padFrequencies[index];
                     playNote(freq);
-                    if (typeof drawVisualizer === 'function') drawVisualizer(index, freq); // ビジュアライザ呼び出し
                 }
             }
             
@@ -754,108 +745,11 @@
                     popup.document.open();
                     popup.document.write(htmlContent);
                     popup.document.close();
-
-                    // --- メイン画面のUIをビジュアルモードに切り替える ---
-                    document.getElementById('pad-grid-container').style.display = 'none';
-                    document.getElementById('popup-btn-container').style.display = 'none';
-                    document.getElementById('pad-header').innerHTML = '<h2 class="text-3xl font-black text-sky-500" style="-webkit-text-stroke: 1px #fff;">✨ ビジュアル ✨</h2>';
-                    
-                    const canvas = document.getElementById('visualizer');
-                    canvas.classList.remove('hidden');
-                    canvas.width = canvas.clientWidth;
-                    canvas.height = canvas.clientHeight;
-                    
-                    if(!animFrameId) {
-                        animateVisualizer();
-                    }
                 } else {
                     // Alert if popup was blocked by the browser
                     alert("ポップアップがブロックされました！\nブラウザの設定でポップアップを許可してから、もう一度お試しください。");
                 }
             });
-
-            // === Visualizer Engine ===
-            function drawVisualizer(index, freq) {
-                const canvas = document.getElementById('visualizer');
-                if (canvas.classList.contains('hidden')) return;
-                
-                // パッドの列に合わせた色
-                const colors = ['#ff6b6b', '#fcc419', '#51cf66', '#339af0', '#cc5de8'];
-                const color = colors[index % 5];
-                
-                // ランダムな位置と周波数に基づいたサイズ
-                const x = canvas.width * 0.1 + Math.random() * (canvas.width * 0.8);
-                const y = canvas.height * 0.1 + Math.random() * (canvas.height * 0.8);
-                const radius = 20 + (freq / 1000) * 40 + Math.random() * 30;
-
-                particles.push({
-                    x: x,
-                    y: y,
-                    radius: radius,
-                    color: color,
-                    life: 1.0,
-                    vx: (Math.random() - 0.5) * 4,
-                    vy: (Math.random() - 0.5) * 4,
-                    shape: Math.random() > 0.5 ? 'circle' : 'star'
-                });
-            }
-
-            function animateVisualizer() {
-                const canvas = document.getElementById('visualizer');
-                const ctx = canvas.getContext('2d');
-                
-                // 軌跡を残すための半透明の背景描画
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.2)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    let p = particles[i];
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.life -= 0.02; // 徐々に消える
-
-                    ctx.fillStyle = p.color;
-                    ctx.globalAlpha = Math.max(0, p.life);
-                    
-                    ctx.beginPath();
-                    if (p.shape === 'circle') {
-                        ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
-                        ctx.fill();
-                    } else {
-                        drawStar(ctx, p.x, p.y, 5, p.radius * p.life, p.radius * p.life * 0.5);
-                        ctx.fill();
-                    }
-                    
-                    ctx.globalAlpha = 1.0;
-
-                    if (p.life <= 0) {
-                        particles.splice(i, 1);
-                    }
-                }
-                animFrameId = requestAnimationFrame(animateVisualizer);
-            }
-
-            function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
-                let rot = Math.PI / 2 * 3;
-                let x = cx;
-                let y = cy;
-                let step = Math.PI / spikes;
-
-                ctx.moveTo(cx, cy - outerRadius);
-                for (let i = 0; i < spikes; i++) {
-                    x = cx + Math.cos(rot) * outerRadius;
-                    y = cy + Math.sin(rot) * outerRadius;
-                    ctx.lineTo(x, y);
-                    rot += step;
-
-                    x = cx + Math.cos(rot) * innerRadius;
-                    y = cy + Math.sin(rot) * innerRadius;
-                    ctx.lineTo(x, y);
-                    rot += step;
-                }
-                ctx.lineTo(cx, cy - outerRadius);
-                ctx.closePath();
-            }
         }
     </script>
 </body>
