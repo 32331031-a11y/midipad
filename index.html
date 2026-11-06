@@ -739,16 +739,6 @@
                 }
             }
 
-            // Popup logic using a Blob URL link to bypass strict popup blockers
-            const popupBtn = document.getElementById('open-popup-btn');
-            
-            function preparePopup() {
-                let htmlContent = "<!DOCTYPE html>\n<html>\n" + document.documentElement.innerHTML + "\n</html>";
-                htmlContent = htmlContent.replace('<head>', '<head><script>window.IS_PAD_ONLY = true;<' + '/script>');
-                const blob = new Blob([htmlContent], { type: 'text/html' });
-                popupBtn.href = URL.createObjectURL(blob);
-            }
-
             // Popup logic (Window.open approach)
             const popupBtn = document.getElementById('open-popup-btn');
             
