@@ -97,6 +97,13 @@
                     🥁
                 </button>
             </div>
+            
+            <div class="mt-4 w-full max-w-md">
+                <button id="open-popup-btn" class="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-sky-400 border border-slate-600 shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    別ウィンドウでパッドを開く
+                </button>
+            </div>
         </div>
 
         <!-- Right Column: Synth Controls -->
@@ -182,20 +189,21 @@
 
     <script>
         // === Core State & Variables ===
-        let audioCtx;
+        var audioCtx;
         let masterGain, delayNode, feedbackGain, reverbNode, dryGain, wetGain;
-        let padFrequencies = [];
+        var padFrequencies = [];
         let isPointerDown = false;
         let lastTriggeredIndex = -1;
         let rhythmInterval = null;
         let isRhythmPlaying = false;
+        var popupPadWin = null;
 
         // Visual Colors for Pads
         const padColors = [
             '#ef4444', '#f97316', '#eab308', '#22c55e', '#0ea5e9', 
             '#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#14b8a6'
         ];
-        let currentPadColor = '#0ea5e9';
+        var currentPadColor = '#0ea5e9';
 
         // Synth Parameters State
         const params = {
@@ -215,11 +223,7 @@
         // Musical Scales (Intervals from Root)
         const scales = {
             'Minor Pentatonic': [0, 3, 5, 7, 10],
-            'Major Pentatonic': [0, 2, 4, 7, 9],
-            'Dorian': [0, 2, 3, 5, 7, 9, 10],
-            'Phrygian': [0, 1, 3, 5, 7, 8, 10],
-            'Lydian': [0, 2, 4, 6, 7, 9, 11],
-            'Whole Tone': [0, 2, 4, 6, 8, 10]
+            'Major Pentatonic': [0, 2, 4, 7, 9]
         };
         const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -494,6 +498,11 @@
             // Rhythmic pulse visual on grid
             gridContainer.style.borderColor = currentPadColor;
             gridContainer.style.boxShadow = `0 0 20px ${currentPadColor}40`;
+
+            // Update Popup Window if open
+            if (popupPadWin && !popupPadWin.closed && popupPadWin.updateGridColor) {
+                popupPadWin.updateGridColor(currentPadColor);
+            }
         }
 
         function updateEffectsNodes() {
@@ -570,6 +579,148 @@
                 btn.classList.replace('bg-sky-600', 'bg-slate-700');
                 clearInterval(rhythmInterval);
             }
+        });
+
+        // === Popup Window Logic ===
+        document.getElementById('open-popup-btn').addEventListener('click', () => {
+            popupPadWin = window.open('', 'GenerativePads', 'width=500,height=500,menubar=no,toolbar=no');
+            if(!popupPadWin) {
+                alert("ポップアップがブロックされました。ブラウザの設定で許可してください。");
+                return;
+            }
+            
+            const html = `
+                <!DOCTYPE html>
+                <html lang="ja">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+                    <title>Generative Pad</title>
+                    <style>
+                        body { 
+                            background-color: #0f172a; 
+                            touch-action: manipulation; 
+                            display: flex; 
+                            justify-content: center; 
+                            align-items: center; 
+                            min-height: 100vh; 
+                            margin: 0; 
+                        }
+                        #pad-grid-container { 
+                            touch-action: none; 
+                            width: 100%; 
+                            max-width: 450px; 
+                            aspect-ratio: 1/1; 
+                            display: grid; 
+                            grid-template-columns: repeat(5, 1fr); 
+                            grid-template-rows: repeat(5, 1fr); 
+                            gap: 12px; 
+                            background: #1e293b; 
+                            padding: 16px; 
+                            border-radius: 1rem; 
+                            border: 1px solid #334155;
+                        }
+                        .pad { 
+                            transition: transform 0.05s ease, box-shadow 0.1s ease, background-color 0.1s ease; 
+                            box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 4px 6px -1px rgba(0,0,0,0.3); 
+                            border-radius: 0.75rem; 
+                            cursor: pointer; 
+                            background-color: #334155; 
+                        }
+                        .pad.active { 
+                            transform: scale(0.92); 
+                            box-shadow: 0 0 20px currentColor, inset 0 0 5px rgba(255,255,255,0.5); 
+                            filter: brightness(1.5); 
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div id="pad-grid-container"></div>
+                    <script>
+                        const container = document.getElementById('pad-grid-container');
+                        let isPointerDown = false;
+                        let lastTriggeredIndex = -1;
+
+                        // Create Pads
+                        for (let i = 0; i < 25; i++) {
+                            const pad = document.createElement('div');
+                            pad.classList.add('pad');
+                            pad.dataset.index = i;
+                            
+                            pad.addEventListener('mousedown', () => triggerPad(i, pad));
+                            pad.addEventListener('mouseenter', () => { if(isPointerDown) triggerPad(i, pad); });
+                            container.appendChild(pad);
+                        }
+
+                        // Pointer Events
+                        document.addEventListener('mousedown', () => isPointerDown = true);
+                        document.addEventListener('mouseup', () => { isPointerDown = false; lastTriggeredIndex = -1; });
+                        document.addEventListener('mouseleave', () => { isPointerDown = false; lastTriggeredIndex = -1; });
+
+                        // Touch Events for Mobile Swiping
+                        container.addEventListener('touchstart', (e) => { 
+                            isPointerDown = true; 
+                            handleTouchMove(e); 
+                        }, { passive: false });
+                        container.addEventListener('touchmove', handleTouchMove, { passive: false });
+                        container.addEventListener('touchend', () => { 
+                            isPointerDown = false; 
+                            lastTriggeredIndex = -1; 
+                        });
+
+                        function handleTouchMove(e) {
+                            e.preventDefault(); // Prevent scrolling
+                            if (!isPointerDown) return;
+                            const touch = e.touches[0];
+                            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                            if (element && element.classList.contains('pad')) {
+                                const index = parseInt(element.dataset.index);
+                                if (index !== lastTriggeredIndex) {
+                                    triggerPad(index, element);
+                                    lastTriggeredIndex = index;
+                                }
+                            }
+                        }
+
+                        function triggerPad(index, element) {
+                            if(window.opener && !window.opener.closed) {
+                                const openerCtx = window.opener.audioCtx;
+                                if(openerCtx && openerCtx.state === 'suspended') openerCtx.resume();
+                                
+                                // Play note on main window
+                                const freq = window.opener.padFrequencies[index];
+                                window.opener.playNote(freq);
+                                
+                                // Visual feedback
+                                const color = window.opener.currentPadColor;
+                                element.style.color = color;
+                                element.classList.add('active');
+                                setTimeout(() => {
+                                    element.classList.remove('active');
+                                    element.style.color = '';
+                                }, 200);
+                            }
+                        }
+                        
+                        // Exposed function to allow main window to sync colors
+                        window.updateGridColor = function(color) {
+                            container.style.borderColor = color;
+                            container.style.boxShadow = "0 0 20px " + color + "40";
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `;
+            popupPadWin.document.open();
+            popupPadWin.document.write(html);
+            popupPadWin.document.close();
+            
+            // Sync initial color
+            popupPadWin.onload = () => {
+                if(window.currentPadColor) {
+                    popupPadWin.updateGridColor(window.currentPadColor);
+                }
+            };
         });
 
         // Waveform selection
