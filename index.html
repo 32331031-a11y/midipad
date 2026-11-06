@@ -176,10 +176,10 @@
             <canvas id="visualizer" class="hidden w-full max-w-md aspect-square bg-slate-900 rounded-[35px] border-8 border-slate-700 shadow-inner"></canvas>
             
             <div id="popup-btn-container" class="mt-8 w-full max-w-md">
-                <button id="open-popup-btn" class="big-btn w-full py-5 bg-purple-400 text-white rounded-3xl font-black text-xl flex items-center justify-center gap-3">
+                <a id="open-popup-btn" target="_blank" class="big-btn w-full py-5 bg-purple-400 text-white rounded-3xl font-black text-xl flex items-center justify-center gap-3 cursor-pointer no-underline block text-center">
                     <span class="text-3xl">💻</span>
                     べつのウィンドウでひらく
-                </button>
+                </a>
             </div>
         </div>
 
@@ -739,47 +739,35 @@
                 }
             }
 
-            // Popup logic uses document.write to bypass sandbox and Blob URL restrictions
-            document.getElementById('open-popup-btn').addEventListener('click', () => {
-                // まず空のウィンドウを開く
-                const popup = window.open('', 'PadWin', 'width=550,height=550,menubar=no,toolbar=no');
+            // Popup logic using a Blob URL link to bypass strict popup blockers
+            const popupBtn = document.getElementById('open-popup-btn');
+            
+            function preparePopup() {
+                let htmlContent = "<!DOCTYPE html>\n<html>\n" + document.documentElement.innerHTML + "\n</html>";
+                htmlContent = htmlContent.replace('<head>', '<head><script>window.IS_PAD_ONLY = true;<' + '/script>');
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                popupBtn.href = URL.createObjectURL(blob);
+            }
+
+            // ホバーやタッチ時に事前にリンクを生成しておく
+            popupBtn.addEventListener('mouseenter', preparePopup);
+            popupBtn.addEventListener('touchstart', preparePopup, {passive: true});
+
+            popupBtn.addEventListener('click', (e) => {
+                if (!popupBtn.href) preparePopup();
                 
-                if (popup) {
-                    let htmlContent = "<!DOCTYPE html>\n<html>\n" + document.documentElement.innerHTML + "\n</html>";
-                    htmlContent = htmlContent.replace('<head>', '<head><script>window.IS_PAD_ONLY = true;<\/script>');
-                    
-                    // 新しいウィンドウに現在の画面のHTMLを直接書き込む
-                    popup.document.open();
-                    popup.document.write(htmlContent);
-                    popup.document.close();
-                    
-                    // --- メイン画面のUIをビジュアルモードに切り替える ---
-                    document.getElementById('pad-grid-container').style.display = 'none';
-                    document.getElementById('popup-btn-container').style.display = 'none';
-                    document.getElementById('pad-header').innerHTML = '<h2 class="text-3xl font-black text-sky-500" style="-webkit-text-stroke: 1px #fff;">✨ ビジュアル ✨</h2>';
-                    
-                    const canvas = document.getElementById('visualizer');
-                    canvas.classList.remove('hidden');
-                    // Canvasのサイズを要素に合わせる
-                    canvas.width = canvas.clientWidth;
-                    canvas.height = canvas.clientHeight;
-                    
-                    if(!animFrameId) {
-                        animateVisualizer();
-                    }
-                } else {
-                    // alert()の代わりに、画面上部にメッセージボックスを表示
-                    const msgBox = document.createElement('div');
-                    msgBox.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ff4a4a; color:white; padding:15px 30px; border-radius:15px; font-weight:bold; z-index:9999; box-shadow:0 10px 20px rgba(0,0,0,0.2); font-size: 1.2rem; text-align:center;';
-                    msgBox.innerHTML = '⚠️ ウィンドウがブロックされちゃった！<br>ブラウザのURLバーの右上から「許可」してね！';
-                    document.body.appendChild(msgBox);
-                    
-                    // 5秒後にメッセージを消す
-                    setTimeout(() => {
-                        if (msgBox.parentNode) {
-                            msgBox.parentNode.removeChild(msgBox);
-                        }
-                    }, 5000);
+                // --- メイン画面のUIをビジュアルモードに切り替える ---
+                document.getElementById('pad-grid-container').style.display = 'none';
+                document.getElementById('popup-btn-container').style.display = 'none';
+                document.getElementById('pad-header').innerHTML = '<h2 class="text-3xl font-black text-sky-500" style="-webkit-text-stroke: 1px #fff;">✨ ビジュアル ✨</h2>';
+                
+                const canvas = document.getElementById('visualizer');
+                canvas.classList.remove('hidden');
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+                
+                if(!animFrameId) {
+                    animateVisualizer();
                 }
             });
 
