@@ -2,26 +2,96 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>おんがく まほうばこ - Toy Box Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'M PLUS Rounded 1c', 'Fredoka', sans-serif;
-            background-color: #fef08a;
+        * {
+            box-sizing: border-box;
             user-select: none;
+            -webkit-user-select: none;
             touch-action: manipulation;
         }
-        
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'M PLUS Rounded 1c', 'Fredoka', sans-serif;
+            background-color: #fef08a;
+        }
+
+        /* 画面全体レイアウト */
+        .app-container {
+            display: flex;
+            flex-direction: row;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            padding: 12px;
+            gap: 12px;
+        }
+
+        /* 左側：操作パネル（スクロール可能） */
+        .control-panel {
+            width: 380px;
+            min-width: 320px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-right: 4px;
+        }
+
+        /* 右側：パッドエリア（メインで画面いっぱいに拡大） */
+        .pad-panel {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pad-grid-container {
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: #ffffff;
+            padding: 16px;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 8px solid #fde047;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pad-grid {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 8px;
+            touch-action: none; /* なぞり演奏用のスクロール防止 */
+        }
+
         .pad {
             transition: all 0.1s ease-out;
-            box-shadow: 0 8px 0 rgba(0,0,0,0.15), inset 0 4px 0 rgba(255,255,255,0.4);
-            border-radius: 1.5rem;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.15), inset 0 4px 0 rgba(255,255,255,0.4);
+            border-radius: 1.2rem;
+            cursor: pointer;
         }
         
         .pad:active, .pad.active {
-            transform: translateY(8px) scale(0.95);
+            transform: translateY(6px) scale(0.96);
             box-shadow: 0 0px 0 rgba(0,0,0,0.15), inset 0 2px 0 rgba(255,255,255,0.4);
             filter: brightness(1.2);
         }
@@ -36,14 +106,14 @@
             box-shadow: 0 0px 0 rgba(0,0,0,0.2), inset 0 2px 0 rgba(255,255,255,0.3);
         }
 
-        /* Pad colors by row (Octaves) */
+        /* Pad colors by row */
         .row-0 { background: #ef4444; border: 3px solid #b91c1c; }
         .row-1 { background: #f59e0b; border: 3px solid #b45309; }
         .row-2 { background: #eab308; border: 3px solid #a16207; }
         .row-3 { background: #10b981; border: 3px solid #047857; }
         .row-4 { background: #3b82f6; border: 3px solid #1d4ed8; }
 
-        /* Range Slider Custom Styling matching image */
+        /* Range Slider Custom Styling */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -69,7 +139,6 @@
             border: 1px solid #eab308;
         }
 
-        /* Rhythm buttons custom style */
         .rhythm-btn-card {
             box-shadow: 0 4px 0 rgba(0,0,0,0.15);
             transition: all 0.1s;
@@ -79,55 +148,44 @@
             box-shadow: none;
         }
 
-        /* Pad-only mode */
-        body.pad-only-mode #header-controls,
-        body.pad-only-mode #status-panel,
-        body.pad-only-mode #rhythm-panel {
-            display: none !important;
-        }
-        body.pad-only-mode {
-            padding: 0;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #1e1e1e;
-        }
-        body.pad-only-mode #grid-container {
-            width: 100vw;
-            height: 100vh;
-            max-width: none;
-            border-radius: 0;
-            border: none;
-            box-shadow: none;
+        /* 縦向き画面（モバイル・縦向きタブレット）のレスポンシブ対応 */
+        @media (max-width: 768px) and (orientation: portrait) {
+            .app-container {
+                flex-direction: column-reverse;
+                padding: 8px;
+            }
+            .control-panel {
+                width: 100%;
+                min-width: 0;
+                height: 40%;
+            }
+            .pad-panel {
+                width: 100%;
+                height: 60%;
+            }
         }
     </style>
 </head>
-<body class="flex flex-col items-center min-h-screen text-amber-900 p-4">
+<body>
 
-    <!-- Header & Controls -->
-    <div id="header-controls" class="w-full max-w-5xl flex flex-col md:flex-row items-center justify-between gap-3 mb-3">
-        <h1 class="text-3xl md:text-4xl font-extrabold text-orange-600 tracking-wide flex items-center gap-2">
+<div class="app-container">
+
+    <!-- 左側：操作パネル -->
+    <div class="control-panel">
+        
+        <!-- ヘッダータイトル -->
+        <h1 class="text-2xl md:text-3xl font-extrabold text-orange-600 tracking-wide flex items-center justify-center gap-2 py-1">
             🧸 おんがく まほうばこ
         </h1>
-        
-        <div class="flex flex-wrap justify-center gap-2">
-            <button id="btn-surprise" class="btn-toy bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-full text-xl font-bold border-2 border-purple-800 flex items-center gap-2">
-                🎲 おまかせ おんとねいろ
-            </button>
-            <button id="btn-popout" class="btn-toy bg-gray-700 hover:bg-gray-600 text-white px-4 py-2.5 rounded-full text-base font-bold border-2 border-gray-900 flex items-center gap-1">
-                🪟 パッドだけべつのまどでひらく
-            </button>
-        </div>
-    </div>
 
-    <!-- Main Controls Area -->
-    <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <!-- おまかせボタン -->
+        <button id="btn-surprise" class="btn-toy bg-purple-600 hover:bg-purple-500 text-white w-full py-3 rounded-full text-lg font-bold border-2 border-purple-800 flex items-center justify-center gap-2">
+            🎲 おまかせ おんとねいろ
+        </button>
         
         <!-- Sound Control Panel (おとのかたちを かえよう) -->
         <div id="status-panel" class="bg-amber-100/90 border-4 border-dashed border-amber-300 rounded-3xl p-4 shadow-md flex flex-col gap-3">
-            <h2 class="font-extrabold text-orange-500 text-lg flex items-center gap-2">
+            <h2 class="font-extrabold text-orange-500 text-base flex items-center gap-2">
                 🎛️ おとのかたちを かえよう
             </h2>
             
@@ -183,27 +241,27 @@
         </div>
 
         <!-- Rhythm Controls (いろいろ リズム) -->
-        <div id="rhythm-panel" class="bg-amber-100/90 border-4 border-dashed border-amber-300 rounded-3xl p-4 shadow-md flex flex-col justify-between">
-            <h2 class="font-extrabold text-orange-500 text-lg mb-2 flex items-center gap-2">
+        <div id="rhythm-panel" class="bg-amber-100/90 border-4 border-dashed border-amber-300 rounded-3xl p-4 shadow-md flex flex-col gap-2">
+            <h2 class="font-extrabold text-orange-500 text-base flex items-center gap-2">
                 🥁 いろいろ リズム
             </h2>
-            <div class="grid grid-cols-3 gap-2.5 h-full">
-                <button class="rhythm-btn rhythm-btn-card bg-pink-500 hover:bg-pink-400 text-white font-extrabold py-3 px-2 rounded-2xl text-center leading-tight flex items-center justify-center border-2 border-pink-600" data-rhythm="0">
+            <div class="grid grid-cols-3 gap-2">
+                <button class="rhythm-btn rhythm-btn-card bg-pink-500 hover:bg-pink-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-pink-600" data-rhythm="0">
                     てんぽよく<br>ポップ
                 </button>
-                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-2 rounded-2xl text-center leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="1">
+                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="1">
                     ノリノリ<br>ダンス
                 </button>
-                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-2 rounded-2xl text-center leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="2">
+                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="2">
                     ゆったり<br>エレクトロ
                 </button>
-                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-2 rounded-2xl text-center leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="3">
+                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="3">
                     ドコドコ<br>ロック
                 </button>
-                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-2 rounded-2xl text-center leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="4">
+                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="4">
                     あやしい<br>ヒップホップ
                 </button>
-                <button id="btn-stop-rhythm" class="rhythm-btn-card bg-rose-500 hover:bg-rose-400 text-white font-extrabold py-3 px-2 rounded-2xl text-center leading-tight flex items-center justify-center border-2 border-rose-600">
+                <button id="btn-stop-rhythm" class="rhythm-btn-card bg-rose-500 hover:bg-rose-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-rose-600">
                     ⏹️<br>とめる
                 </button>
             </div>
@@ -211,500 +269,486 @@
 
     </div>
 
-    <!-- Pad Grid Container -->
-    <div id="grid-container" class="bg-white p-4 md:p-6 rounded-3xl shadow-2xl border-8 border-yellow-300 w-full max-w-2xl aspect-square">
-        <div id="pad-grid" class="w-full h-full grid grid-cols-5 grid-rows-5 gap-2 md:gap-3">
-            <!-- Pads generated by JS -->
+    <!-- 右側：メイン画面で大きく表示するパッドエリア -->
+    <div class="pad-panel">
+        <div class="pad-grid-container">
+            <div id="pad-grid" class="pad-grid">
+                <!-- 5x5 Pad Generated by JS -->
+            </div>
         </div>
     </div>
 
-    <script>
-        // --- Setup & Configuration ---
-        const GRID_SIZE = 25;
-        let PENTATONIC_RATIOS = [1, 9/8, 5/4, 3/2, 5/3]; // Major pentatonic ratios
-        let BASE_FREQ = 65.41; // C2
+</div>
 
-        // Synthesizer State
-        const synthParams = {
-            wave: 0,
-            attack: 0.05,    
-            releaseReverb: 0.2,   
-            biyobiyo: 0.2,
-            delay: 0.2
-        };
+<script>
+    // --- Setup & Configuration ---
+    const GRID_SIZE = 25;
+    let PENTATONIC_RATIOS = [1, 9/8, 5/4, 3/2, 5/3]; // Major pentatonic ratios
+    let BASE_FREQ = 65.41; // C2
 
-        const waveNames = ["ピコピコ", "ギザギザ", "ぽわぽわ", "じりじり"];
+    // Synthesizer State
+    const synthParams = {
+        wave: 0,
+        attack: 0.05,    
+        releaseReverb: 0.2,   
+        biyobiyo: 0.2,
+        delay: 0.2
+    };
 
-        let audioCtx;
-        let masterCompressor, delayNode, feedbackGain, reverbNode, masterGain;
-        let globalDelaySend, globalReverbSend;
-        
-        let isAudioInitialized = false;
-        let isSwiping = false;
-        
-        // Rhythm Sequencer State
-        let isPlayingRhythm = false;
-        let rhythmTimerID = null;
-        let currentPattern = null;
-        let rhythmStep = 0;
-        let nextDrumTime = 0;
+    const waveNames = ["ピコピコ", "ギザギザ", "ぽわぽわ", "じりじり"];
 
-        // Drum Patterns matched with image labels
-        const rhythmPatterns = [
-            { name: "てんぽよく ポップ", bpm: 120, steps: 16, 
-              kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0], 
-              snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], 
-              hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0] },
-            { name: "ノリノリ ダンス", bpm: 128, steps: 16, 
-              kick:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], 
-              snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], 
-              hihat: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0] },
-            { name: "ゆったり エレクトロ", bpm: 90, steps: 16, 
-              kick:  [1,0,0,1, 0,0,0,0, 0,0,1,0, 0,0,0,0], 
-              snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], 
-              hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,1] },
-            { name: "ドコドコ ロック", bpm: 135, steps: 16, 
-              kick:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], 
-              snare: [0,0,1,0, 1,0,1,1, 0,0,1,0, 1,0,1,1], 
-              hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0] },
-            { name: "あやしい ヒップホップ", bpm: 85, steps: 16, 
-              kick:  [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0], 
-              snare: [0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0], 
-              hihat: [1,1,0,1, 1,1,0,1, 1,1,0,1, 1,1,0,1] }
-        ];
+    let audioCtx;
+    let masterCompressor, delayNode, feedbackGain, reverbNode, masterGain;
+    let globalDelaySend, globalReverbSend;
+    
+    let isAudioInitialized = false;
+    let isSwiping = false;
+    
+    // Rhythm Sequencer State
+    let isPlayingRhythm = false;
+    let rhythmTimerID = null;
+    let currentPattern = null;
+    let rhythmStep = 0;
+    let nextDrumTime = 0;
 
-        // --- DOM Elements ---
-        const padGrid = document.getElementById('pad-grid');
-        const btnSurprise = document.getElementById('btn-surprise');
-        const btnPopout = document.getElementById('btn-popout');
-        const rhythmBtns = document.querySelectorAll('.rhythm-btn');
-        const btnStopRhythm = document.getElementById('btn-stop-rhythm');
-        
-        // Sliders & Text Labels
-        const sliders = {
-            wave: document.getElementById('ctrl-wave'),
-            attack: document.getElementById('ctrl-attack'),
-            releaseReverb: document.getElementById('ctrl-release-reverb'),
-            biyobiyo: document.getElementById('ctrl-biyobiyo'),
-            delay: document.getElementById('ctrl-delay')
-        };
+    // Drum Patterns
+    const rhythmPatterns = [
+        { name: "てんぽよく ポップ", bpm: 120, steps: 16, 
+          kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0], 
+          snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], 
+          hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0] },
+        { name: "ノリノリ ダンス", bpm: 128, steps: 16, 
+          kick:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], 
+          snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], 
+          hihat: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0] },
+        { name: "ゆったり エレクトロ", bpm: 90, steps: 16, 
+          kick:  [1,0,0,1, 0,0,0,0, 0,0,1,0, 0,0,0,0], 
+          snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0], 
+          hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,1] },
+        { name: "ドコドコ ロック", bpm: 135, steps: 16, 
+          kick:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], 
+          snare: [0,0,1,0, 1,0,1,1, 0,0,1,0, 1,0,1,1], 
+          hihat: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0] },
+        { name: "あやしい ヒップホップ", bpm: 85, steps: 16, 
+          kick:  [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0], 
+          snare: [0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0], 
+          hihat: [1,1,0,1, 1,1,0,1, 1,1,0,1, 1,1,0,1] }
+    ];
 
-        const labels = {
-            wave: document.getElementById('label-wave'),
-            attack: document.getElementById('label-attack'),
-            releaseReverb: document.getElementById('label-release-reverb'),
-            biyobiyo: document.getElementById('label-biyobiyo'),
-            delay: document.getElementById('label-delay')
-        };
+    // --- DOM Elements ---
+    const padGrid = document.getElementById('pad-grid');
+    const btnSurprise = document.getElementById('btn-surprise');
+    const rhythmBtns = document.querySelectorAll('.rhythm-btn');
+    const btnStopRhythm = document.getElementById('btn-stop-rhythm');
+    
+    // Sliders & Text Labels
+    const sliders = {
+        wave: document.getElementById('ctrl-wave'),
+        attack: document.getElementById('ctrl-attack'),
+        releaseReverb: document.getElementById('ctrl-release-reverb'),
+        biyobiyo: document.getElementById('ctrl-biyobiyo'),
+        delay: document.getElementById('ctrl-delay')
+    };
 
-        // Text display update logic matching the provided UI
-        function updateLabels() {
-            labels.wave.textContent = waveNames[synthParams.wave];
+    const labels = {
+        wave: document.getElementById('label-wave'),
+        attack: document.getElementById('label-attack'),
+        releaseReverb: document.getElementById('label-release-reverb'),
+        biyobiyo: document.getElementById('label-biyobiyo'),
+        delay: document.getElementById('label-delay')
+    };
 
-            if (synthParams.attack < 0.2) labels.attack.textContent = "すぐ鳴る";
-            else if (synthParams.attack < 0.6) labels.attack.textContent = "ふつう";
-            else labels.attack.textContent = "ふんわり";
+    function updateLabels() {
+        labels.wave.textContent = waveNames[synthParams.wave];
 
-            if (synthParams.releaseReverb < 0.1) labels.releaseReverb.textContent = "なし";
-            else if (synthParams.releaseReverb < 0.5) labels.releaseReverb.textContent = "すこし";
-            else labels.releaseReverb.textContent = "いっぱい";
+        if (synthParams.attack < 0.2) labels.attack.textContent = "すぐ鳴る";
+        else if (synthParams.attack < 0.6) labels.attack.textContent = "ふつう";
+        else labels.attack.textContent = "ふんわり";
 
-            if (synthParams.biyobiyo < 0.1) labels.biyobiyo.textContent = "なし";
-            else if (synthParams.biyobiyo < 0.5) labels.biyobiyo.textContent = "すこし";
-            else labels.biyobiyo.textContent = "ビヨビヨ！";
+        if (synthParams.releaseReverb < 0.1) labels.releaseReverb.textContent = "なし";
+        else if (synthParams.releaseReverb < 0.5) labels.releaseReverb.textContent = "すこし";
+        else labels.releaseReverb.textContent = "いっぱい";
 
-            if (synthParams.delay < 0.1) labels.delay.textContent = "なし";
-            else if (synthParams.delay < 0.5) labels.delay.textContent = "すこし";
-            else labels.delay.textContent = "やまびこ！";
-        }
+        if (synthParams.biyobiyo < 0.1) labels.biyobiyo.textContent = "なし";
+        else if (synthParams.biyobiyo < 0.5) labels.biyobiyo.textContent = "すこし";
+        else labels.biyobiyo.textContent = "ビヨビヨ！";
 
-        // Bind sliders to synthParams & update text labels
-        Object.keys(sliders).forEach(key => {
-            if(sliders[key]) {
-                sliders[key].addEventListener('input', (e) => {
-                    synthParams[key] = parseFloat(e.target.value);
-                    if (key === 'wave') synthParams.wave = parseInt(e.target.value);
-                    
-                    updateLabels();
+        if (synthParams.delay < 0.1) labels.delay.textContent = "なし";
+        else if (synthParams.delay < 0.5) labels.delay.textContent = "すこし";
+        else labels.delay.textContent = "やまびこ！";
+    }
 
-                    if (isAudioInitialized) {
-                        if (key === 'delay') {
-                            globalDelaySend.gain.setTargetAtTime(synthParams.delay * 0.8, audioCtx.currentTime, 0.05);
-                        }
-                        if (key === 'releaseReverb') {
-                            globalReverbSend.gain.setTargetAtTime(synthParams.releaseReverb * 1.5, audioCtx.currentTime, 0.05);
-                        }
+    Object.keys(sliders).forEach(key => {
+        if(sliders[key]) {
+            sliders[key].addEventListener('input', (e) => {
+                synthParams[key] = parseFloat(e.target.value);
+                if (key === 'wave') synthParams.wave = parseInt(e.target.value);
+                
+                updateLabels();
+
+                if (isAudioInitialized) {
+                    if (key === 'delay') {
+                        globalDelaySend.gain.setTargetAtTime(synthParams.delay * 0.8, audioCtx.currentTime, 0.05);
                     }
-                });
+                    if (key === 'releaseReverb') {
+                        globalReverbSend.gain.setTargetAtTime(synthParams.releaseReverb * 1.5, audioCtx.currentTime, 0.05);
+                    }
+                }
+            });
+        }
+    });
+
+    // --- Audio Engine ---
+    function initAudio() {
+        if (isAudioInitialized) return;
+        
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+
+        masterCompressor = audioCtx.createDynamicsCompressor();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.6;
+        
+        masterCompressor.connect(masterGain);
+        masterGain.connect(audioCtx.destination);
+
+        delayNode = audioCtx.createDelay();
+        delayNode.delayTime.value = 0.35;
+        
+        feedbackGain = audioCtx.createGain();
+        feedbackGain.gain.value = 0.7;
+        
+        delayNode.connect(feedbackGain);
+        feedbackGain.connect(delayNode);
+        delayNode.connect(masterCompressor);
+        
+        reverbNode = audioCtx.createConvolver();
+        reverbNode.buffer = createReverbImpulse(3.0, false);
+        reverbNode.connect(masterCompressor);
+
+        globalDelaySend = audioCtx.createGain();
+        globalDelaySend.gain.value = synthParams.delay * 0.8;
+        globalDelaySend.connect(delayNode);
+
+        globalReverbSend = audioCtx.createGain();
+        globalReverbSend.gain.value = synthParams.releaseReverb * 1.5;
+        globalReverbSend.connect(reverbNode);
+
+        isAudioInitialized = true;
+    }
+
+    function createReverbImpulse(duration, reverse) {
+        const sampleRate = audioCtx.sampleRate;
+        const length = sampleRate * duration;
+        const impulse = audioCtx.createBuffer(2, length, sampleRate);
+        
+        for (let channel = 0; channel < 2; channel++) {
+            const channelData = impulse.getChannelData(channel);
+            for (let i = 0; i < length; i++) {
+                const n = reverse ? length - i : i;
+                channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - n / length, 3);
             }
+        }
+        return impulse;
+    }
+
+    function playKick(time) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(masterCompressor);
+
+        osc.frequency.setValueAtTime(150, time);
+        osc.frequency.exponentialRampToValueAtTime(0.001, time + 0.5);
+
+        gain.gain.setValueAtTime(1, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+
+        osc.start(time);
+        osc.stop(time + 0.5);
+    }
+
+    function playSnare(time) {
+        const bufferSize = audioCtx.sampleRate * 0.2;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const noiseFilter = audioCtx.createBiquadFilter();
+        noiseFilter.type = 'highpass';
+        noiseFilter.frequency.value = 1000;
+        const noiseGain = audioCtx.createGain();
+        
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(masterCompressor);
+
+        noiseGain.gain.setValueAtTime(0.8, time);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+        noise.start(time);
+
+        const osc = audioCtx.createOscillator();
+        const oscGain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.connect(oscGain);
+        oscGain.connect(masterCompressor);
+
+        osc.frequency.setValueAtTime(250, time);
+        oscGain.gain.setValueAtTime(0.5, time);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+        osc.start(time);
+        
+        noise.stop(time + 0.2);
+        osc.stop(time + 0.2);
+    }
+
+    function playHihat(time) {
+        const bufferSize = audioCtx.sampleRate * 0.1; 
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const bandpass = audioCtx.createBiquadFilter();
+        bandpass.type = 'bandpass';
+        bandpass.frequency.value = 10000;
+        
+        const highpass = audioCtx.createBiquadFilter();
+        highpass.type = 'highpass';
+        highpass.frequency.value = 7000;
+        
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+
+        noise.connect(bandpass);
+        bandpass.connect(highpass);
+        highpass.connect(gain);
+        gain.connect(masterCompressor);
+
+        noise.start(time);
+        noise.stop(time + 0.05);
+    }
+
+    function getFrequency(padIndex) {
+        const row = Math.floor(padIndex / 5);
+        const col = padIndex % 5;
+        const octave = 4 - row;
+        
+        const baseFreqForOctave = BASE_FREQ * Math.pow(2, octave);
+        return baseFreqForOctave * PENTATONIC_RATIOS[col];
+    }
+
+    function playNote(frequency) {
+        if (!isAudioInitialized) initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const now = audioCtx.currentTime;
+
+        const actualAttack = 0.01 + synthParams.attack * 1.49;
+        const actualRelease = 0.1 + synthParams.releaseReverb * 2.9;
+        const waveType = synthParams.wave;
+        const biyo = synthParams.biyobiyo;
+
+        const osc1 = audioCtx.createOscillator(); 
+        const osc2 = audioCtx.createOscillator(); 
+        const osc2Gain = audioCtx.createGain();
+        const env = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+
+        if (waveType === 0) {
+            osc1.type = 'square';
+            osc2Gain.gain.value = 0;
+        } else if (waveType === 1) {
+            osc1.type = 'sawtooth';
+            osc2Gain.gain.value = 0;
+        } else if (waveType === 2) {
+            osc1.type = 'triangle';
+            osc2Gain.gain.value = 0;
+        } else {
+            osc1.type = 'sawtooth';
+            osc2.type = 'square';
+            osc2.detune.value = 12;
+            osc2Gain.gain.value = 0.5;
+        }
+
+        osc1.frequency.value = frequency;
+        osc2.frequency.value = frequency;
+
+        filter.type = 'lowpass';
+        filter.Q.value = 1 + biyo * 25;
+        
+        const startFreq = Math.min(20000, frequency + 1000 + biyo * 8000);
+        const sweepTime = Math.max(0.1, 0.5 * biyo);
+        
+        filter.frequency.setValueAtTime(startFreq, now);
+        filter.frequency.exponentialRampToValueAtTime(frequency, now + sweepTime);
+
+        env.gain.setValueAtTime(0, now);
+        env.gain.linearRampToValueAtTime(0.6, now + actualAttack);
+        env.gain.exponentialRampToValueAtTime(0.4, now + actualAttack + 0.1); 
+        
+        const stopTime = now + actualAttack + 0.1 + actualRelease;
+        env.gain.exponentialRampToValueAtTime(0.001, stopTime);
+
+        osc1.connect(filter);
+        osc2.connect(osc2Gain);
+        osc2Gain.connect(filter);
+        filter.connect(env);
+
+        env.connect(masterCompressor);
+        env.connect(globalDelaySend);
+        env.connect(globalReverbSend);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(stopTime + 0.1);
+        osc2.stop(stopTime + 0.1);
+
+        osc1.onended = () => {
+            osc1.disconnect();
+            osc2.disconnect();
+            osc2Gain.disconnect();
+            env.disconnect();
+            filter.disconnect();
+        };
+    }
+
+    // Generate UI Grid
+    const pads = [];
+    for (let i = 0; i < GRID_SIZE; i++) {
+        const pad = document.createElement('div');
+        const row = Math.floor(i / 5);
+        
+        pad.className = `pad row-${row} w-full h-full cursor-pointer`;
+        pad.dataset.index = i;
+        
+        pad.addEventListener('pointerdown', (e) => {
+            if(!isAudioInitialized) initAudio();
+            isSwiping = true;
+            triggerPad(pad);
+            pad.releasePointerCapture(e.pointerId);
         });
 
-        // Pop-out mode check
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('mode') === 'pad') {
-            document.body.classList.add('pad-only-mode');
-        }
-
-        // --- Audio Engine Initialization ---
-        function initAudio() {
-            if (isAudioInitialized) return;
-            
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
-
-            masterCompressor = audioCtx.createDynamicsCompressor();
-            masterGain = audioCtx.createGain();
-            masterGain.gain.value = 0.6;
-            
-            masterCompressor.connect(masterGain);
-            masterGain.connect(audioCtx.destination);
-
-            delayNode = audioCtx.createDelay();
-            delayNode.delayTime.value = 0.35;
-            
-            feedbackGain = audioCtx.createGain();
-            feedbackGain.gain.value = 0.7;
-            
-            delayNode.connect(feedbackGain);
-            feedbackGain.connect(delayNode);
-            delayNode.connect(masterCompressor);
-            
-            reverbNode = audioCtx.createConvolver();
-            reverbNode.buffer = createReverbImpulse(3.0, false);
-            reverbNode.connect(masterCompressor);
-
-            globalDelaySend = audioCtx.createGain();
-            globalDelaySend.gain.value = synthParams.delay * 0.8;
-            globalDelaySend.connect(delayNode);
-
-            globalReverbSend = audioCtx.createGain();
-            globalReverbSend.gain.value = synthParams.releaseReverb * 1.5;
-            globalReverbSend.connect(reverbNode);
-
-            isAudioInitialized = true;
-        }
-
-        function createReverbImpulse(duration, reverse) {
-            const sampleRate = audioCtx.sampleRate;
-            const length = sampleRate * duration;
-            const impulse = audioCtx.createBuffer(2, length, sampleRate);
-            
-            for (let channel = 0; channel < 2; channel++) {
-                const channelData = impulse.getChannelData(channel);
-                for (let i = 0; i < length; i++) {
-                    const n = reverse ? length - i : i;
-                    channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - n / length, 3);
-                }
-            }
-            return impulse;
-        }
-
-        // --- Drum Synthesis ---
-        function playKick(time) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(masterCompressor);
-
-            osc.frequency.setValueAtTime(150, time);
-            osc.frequency.exponentialRampToValueAtTime(0.001, time + 0.5);
-
-            gain.gain.setValueAtTime(1, time);
-            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
-
-            osc.start(time);
-            osc.stop(time + 0.5);
-        }
-
-        function playSnare(time) {
-            const bufferSize = audioCtx.sampleRate * 0.2;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            const noiseFilter = audioCtx.createBiquadFilter();
-            noiseFilter.type = 'highpass';
-            noiseFilter.frequency.value = 1000;
-            const noiseGain = audioCtx.createGain();
-            
-            noise.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(masterCompressor);
-
-            noiseGain.gain.setValueAtTime(0.8, time);
-            noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
-            noise.start(time);
-
-            const osc = audioCtx.createOscillator();
-            const oscGain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.connect(oscGain);
-            oscGain.connect(masterCompressor);
-
-            osc.frequency.setValueAtTime(250, time);
-            oscGain.gain.setValueAtTime(0.5, time);
-            oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
-            osc.start(time);
-            
-            noise.stop(time + 0.2);
-            osc.stop(time + 0.2);
-        }
-
-        function playHihat(time) {
-            const bufferSize = audioCtx.sampleRate * 0.1; 
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            
-            const bandpass = audioCtx.createBiquadFilter();
-            bandpass.type = 'bandpass';
-            bandpass.frequency.value = 10000;
-            
-            const highpass = audioCtx.createBiquadFilter();
-            highpass.type = 'highpass';
-            highpass.frequency.value = 7000;
-            
-            const gain = audioCtx.createGain();
-            gain.gain.setValueAtTime(0.3, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
-
-            noise.connect(bandpass);
-            bandpass.connect(highpass);
-            highpass.connect(gain);
-            gain.connect(masterCompressor);
-
-            noise.start(time);
-            noise.stop(time + 0.05);
-        }
-
-        function getFrequency(padIndex) {
-            const row = Math.floor(padIndex / 5);
-            const col = padIndex % 5;
-            const octave = 4 - row;
-            
-            const baseFreqForOctave = BASE_FREQ * Math.pow(2, octave);
-            return baseFreqForOctave * PENTATONIC_RATIOS[col];
-        }
-
-        function playNote(frequency) {
-            if (!isAudioInitialized) initAudio();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            const now = audioCtx.currentTime;
-
-            const actualAttack = 0.01 + synthParams.attack * 1.49;
-            const actualRelease = 0.1 + synthParams.releaseReverb * 2.9;
-            const waveType = synthParams.wave;
-            const biyo = synthParams.biyobiyo;
-
-            const osc1 = audioCtx.createOscillator(); 
-            const osc2 = audioCtx.createOscillator(); 
-            const osc2Gain = audioCtx.createGain();
-            const env = audioCtx.createGain();
-            const filter = audioCtx.createBiquadFilter();
-
-            if (waveType === 0) {
-                osc1.type = 'square';
-                osc2Gain.gain.value = 0;
-            } else if (waveType === 1) {
-                osc1.type = 'sawtooth';
-                osc2Gain.gain.value = 0;
-            } else if (waveType === 2) {
-                osc1.type = 'triangle';
-                osc2Gain.gain.value = 0;
-            } else {
-                osc1.type = 'sawtooth';
-                osc2.type = 'square';
-                osc2.detune.value = 12;
-                osc2Gain.gain.value = 0.5;
-            }
-
-            osc1.frequency.value = frequency;
-            osc2.frequency.value = frequency;
-
-            filter.type = 'lowpass';
-            filter.Q.value = 1 + biyo * 25;
-            
-            const startFreq = Math.min(20000, frequency + 1000 + biyo * 8000);
-            const sweepTime = Math.max(0.1, 0.5 * biyo);
-            
-            filter.frequency.setValueAtTime(startFreq, now);
-            filter.frequency.exponentialRampToValueAtTime(frequency, now + sweepTime);
-
-            env.gain.setValueAtTime(0, now);
-            env.gain.linearRampToValueAtTime(0.6, now + actualAttack);
-            env.gain.exponentialRampToValueAtTime(0.4, now + actualAttack + 0.1); 
-            
-            const stopTime = now + actualAttack + 0.1 + actualRelease;
-            env.gain.exponentialRampToValueAtTime(0.001, stopTime);
-
-            osc1.connect(filter);
-            osc2.connect(osc2Gain);
-            osc2Gain.connect(filter);
-            filter.connect(env);
-
-            env.connect(masterCompressor);
-            env.connect(globalDelaySend);
-            env.connect(globalReverbSend);
-
-            osc1.start(now);
-            osc2.start(now);
-            osc1.stop(stopTime + 0.1);
-            osc2.stop(stopTime + 0.1);
-
-            osc1.onended = () => {
-                osc1.disconnect();
-                osc2.disconnect();
-                osc2Gain.disconnect();
-                env.disconnect();
-                filter.disconnect();
-            };
-        }
-
-        // Generate UI Grid
-        const pads = [];
-        for (let i = 0; i < GRID_SIZE; i++) {
-            const pad = document.createElement('div');
-            const row = Math.floor(i / 5);
-            
-            pad.className = `pad row-${row} w-full h-full cursor-pointer`;
-            pad.dataset.index = i;
-            
-            pad.addEventListener('pointerdown', (e) => {
-                if(!isAudioInitialized) initAudio();
-                isSwiping = true;
+        pad.addEventListener('pointerenter', (e) => {
+            if (isSwiping) {
                 triggerPad(pad);
-                pad.releasePointerCapture(e.pointerId);
-            });
-
-            pad.addEventListener('pointerenter', (e) => {
-                if (isSwiping) {
-                    triggerPad(pad);
-                }
-            });
-
-            padGrid.appendChild(pad);
-            pads.push(pad);
-        }
-
-        document.addEventListener('pointerup', () => isSwiping = false);
-        document.addEventListener('pointercancel', () => isSwiping = false);
-
-        function triggerPad(padElement) {
-            const idx = parseInt(padElement.dataset.index);
-            const freq = getFrequency(idx);
-            
-            padElement.classList.add('active');
-            setTimeout(() => padElement.classList.remove('active'), 150);
-
-            playNote(freq);
-        }
-
-        btnSurprise.addEventListener('click', () => {
-            initAudio();
-            
-            const randomVals = {
-                wave: Math.floor(Math.random() * 4),
-                attack: Math.random(),
-                releaseReverb: Math.random(),
-                biyobiyo: Math.random(),
-                delay: Math.random()
-            };
-
-            Object.keys(randomVals).forEach(key => {
-                synthParams[key] = randomVals[key];
-                if(sliders[key]) {
-                    sliders[key].value = randomVals[key];
-                }
-            });
-            
-            updateLabels();
-
-            const scales = [
-                [1, 9/8, 5/4, 3/2, 5/3],
-                [1, 6/5, 4/3, 3/2, 9/5],
-                [1, 5/4, 4/3, 3/2, 15/8]
-            ];
-            PENTATONIC_RATIOS = scales[Math.floor(Math.random() * scales.length)];
-            BASE_FREQ = 65.41 * (0.8 + Math.random() * 0.4);
-
-            btnSurprise.classList.add('active');
-            setTimeout(() => btnSurprise.classList.remove('active'), 100);
-
-            playNote(getFrequency(12));
+            }
         });
 
-        // --- Rhythm Sequencer ---
-        function scheduleDrums() {
-            const lookahead = 0.1;
-            
-            while (nextDrumTime < audioCtx.currentTime + lookahead) {
-                if (currentPattern.kick[rhythmStep]) playKick(nextDrumTime);
-                if (currentPattern.snare[rhythmStep]) playSnare(nextDrumTime);
-                if (currentPattern.hihat[rhythmStep]) playHihat(nextDrumTime);
+        padGrid.appendChild(pad);
+        pads.push(pad);
+    }
 
-                const secondsPerBeat = 60.0 / currentPattern.bpm;
-                const secondsPerSixteenth = secondsPerBeat / 4;
-                nextDrumTime += secondsPerSixteenth;
-                rhythmStep = (rhythmStep + 1) % currentPattern.steps;
+    document.addEventListener('pointerup', () => isSwiping = false);
+    document.addEventListener('pointercancel', () => isSwiping = false);
+
+    function triggerPad(padElement) {
+        const idx = parseInt(padElement.dataset.index);
+        const freq = getFrequency(idx);
+        
+        padElement.classList.add('active');
+        setTimeout(() => padElement.classList.remove('active'), 150);
+
+        playNote(freq);
+    }
+
+    btnSurprise.addEventListener('click', () => {
+        initAudio();
+        
+        const randomVals = {
+            wave: Math.floor(Math.random() * 4),
+            attack: Math.random(),
+            releaseReverb: Math.random(),
+            biyobiyo: Math.random(),
+            delay: Math.random()
+        };
+
+        Object.keys(randomVals).forEach(key => {
+            synthParams[key] = randomVals[key];
+            if(sliders[key]) {
+                sliders[key].value = randomVals[key];
+            }
+        });
+        
+        updateLabels();
+
+        const scales = [
+            [1, 9/8, 5/4, 3/2, 5/3],
+            [1, 6/5, 4/3, 3/2, 9/5],
+            [1, 5/4, 4/3, 3/2, 15/8]
+        ];
+        PENTATONIC_RATIOS = scales[Math.floor(Math.random() * scales.length)];
+        BASE_FREQ = 65.41 * (0.8 + Math.random() * 0.4);
+
+        btnSurprise.classList.add('active');
+        setTimeout(() => btnSurprise.classList.remove('active'), 100);
+
+        playNote(getFrequency(12));
+    });
+
+    // --- Rhythm Sequencer ---
+    function scheduleDrums() {
+        const lookahead = 0.1;
+        
+        while (nextDrumTime < audioCtx.currentTime + lookahead) {
+            if (currentPattern.kick[rhythmStep]) playKick(nextDrumTime);
+            if (currentPattern.snare[rhythmStep]) playSnare(nextDrumTime);
+            if (currentPattern.hihat[rhythmStep]) playHihat(nextDrumTime);
+
+            const secondsPerBeat = 60.0 / currentPattern.bpm;
+            const secondsPerSixteenth = secondsPerBeat / 4;
+            nextDrumTime += secondsPerSixteenth;
+            rhythmStep = (rhythmStep + 1) % currentPattern.steps;
+        }
+        
+        rhythmTimerID = setTimeout(scheduleDrums, 25);
+    }
+
+    function stopRhythm() {
+        isPlayingRhythm = false;
+        clearTimeout(rhythmTimerID);
+        rhythmBtns.forEach(b => {
+            b.classList.remove('ring-4', 'ring-amber-400', 'scale-105');
+        });
+    }
+
+    rhythmBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            if (isPlayingRhythm) {
+                clearTimeout(rhythmTimerID);
             }
             
-            rhythmTimerID = setTimeout(scheduleDrums, 25);
-        }
-
-        function stopRhythm() {
-            isPlayingRhythm = false;
-            clearTimeout(rhythmTimerID);
             rhythmBtns.forEach(b => {
                 b.classList.remove('ring-4', 'ring-amber-400', 'scale-105');
             });
+            btn.classList.add('ring-4', 'ring-amber-400', 'scale-105');
+
+            isPlayingRhythm = true;
+            const rhythmIndex = parseInt(btn.dataset.rhythm);
+            currentPattern = rhythmPatterns[rhythmIndex];
+            rhythmStep = 0;
+            nextDrumTime = audioCtx.currentTime + 0.05;
+            scheduleDrums();
+        });
+    });
+
+    btnStopRhythm.addEventListener('click', stopRhythm);
+
+    document.body.addEventListener('touchstart', () => {
+        if (isAudioInitialized && audioCtx.state === 'suspended') {
+            audioCtx.resume();
         }
+    }, {once: true});
 
-        rhythmBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                initAudio();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                
-                if (isPlayingRhythm) {
-                    clearTimeout(rhythmTimerID);
-                }
-                
-                rhythmBtns.forEach(b => {
-                    b.classList.remove('ring-4', 'ring-amber-400', 'scale-105');
-                });
-                btn.classList.add('ring-4', 'ring-amber-400', 'scale-105');
-
-                isPlayingRhythm = true;
-                const rhythmIndex = parseInt(btn.dataset.rhythm);
-                currentPattern = rhythmPatterns[rhythmIndex];
-                rhythmStep = 0;
-                nextDrumTime = audioCtx.currentTime + 0.05;
-                scheduleDrums();
-            });
-        });
-
-        btnStopRhythm.addEventListener('click', stopRhythm);
-
-        btnPopout.addEventListener('click', () => {
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('mode', 'pad');
-            window.open(currentUrl.toString(), 'PadWindow', 'width=600,height=600,menubar=no,toolbar=no,location=no');
-        });
-
-        document.body.addEventListener('touchstart', () => {
-            if (isAudioInitialized && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }, {once: true});
-
-        // Initialize label text
-        updateLabels();
-
-    </script>
+    updateLabels();
+</script>
 </body>
 </html>
