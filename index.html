@@ -35,21 +35,22 @@
             gap: 12px;
         }
 
-        /* 左側：操作パネル（スクロール可能） */
+        /* 左側：操作パネル（20%） */
         .control-panel {
-            width: 380px;
-            min-width: 320px;
+            width: 20%;
+            min-width: 190px; /* 狭すぎた場合の最低幅 */
             height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding-right: 4px;
         }
 
-        /* 右側：パッドエリア（メインで画面いっぱいに拡大） */
+        /* 右側：パッドエリア（80%） */
         .pad-panel {
+            width: 80%;
             flex: 1;
             height: 100%;
             display: flex;
@@ -80,7 +81,7 @@
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(5, 1fr);
             gap: 8px;
-            touch-action: none; /* なぞり演奏用のスクロール防止 */
+            touch-action: none;
         }
 
         .pad {
@@ -106,14 +107,14 @@
             box-shadow: 0 0px 0 rgba(0,0,0,0.2), inset 0 2px 0 rgba(255,255,255,0.3);
         }
 
-        /* Pad colors by row */
+        /* Pad colors */
         .row-0 { background: #ef4444; border: 3px solid #b91c1c; }
         .row-1 { background: #f59e0b; border: 3px solid #b45309; }
         .row-2 { background: #eab308; border: 3px solid #a16207; }
         .row-3 { background: #10b981; border: 3px solid #047857; }
         .row-4 { background: #3b82f6; border: 3px solid #1d4ed8; }
 
-        /* Range Slider Custom Styling */
+        /* Sliders */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -121,21 +122,21 @@
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 26px;
-            width: 26px;
+            height: 22px;
+            width: 22px;
             border-radius: 50%;
             background: #ff5722;
             cursor: pointer;
-            margin-top: -8px;
+            margin-top: -6px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             border: 2px solid white;
         }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 12px;
+            height: 10px;
             cursor: pointer;
             background: #fde047;
-            border-radius: 6px;
+            border-radius: 5px;
             border: 1px solid #eab308;
         }
 
@@ -148,7 +149,7 @@
             box-shadow: none;
         }
 
-        /* 縦向き画面（モバイル・縦向きタブレット）のレスポンシブ対応 */
+        /* 縦向き画面（モバイル・縦向きタブレット） */
         @media (max-width: 768px) and (orientation: portrait) {
             .app-container {
                 flex-direction: column-reverse;
@@ -163,6 +164,10 @@
                 width: 100%;
                 height: 60%;
             }
+            /* 縦向き時はボタンを3列に戻す */
+            .rhythm-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
         }
     </style>
 </head>
@@ -170,98 +175,85 @@
 
 <div class="app-container">
 
-    <!-- 左側：操作パネル -->
+    <!-- 左側：操作パネル (20%) -->
     <div class="control-panel">
         
-        <!-- ヘッダータイトル -->
-        <h1 class="text-2xl md:text-3xl font-extrabold text-orange-600 tracking-wide flex items-center justify-center gap-2 py-1">
-            🧸 おんがく まほうばこ
+        <h1 class="text-lg md:text-xl font-extrabold text-orange-600 tracking-wide flex items-center justify-center gap-1 py-1">
+            🧸 まほうばこ
         </h1>
 
-        <!-- おまかせボタン -->
-        <button id="btn-surprise" class="btn-toy bg-purple-600 hover:bg-purple-500 text-white w-full py-3 rounded-full text-lg font-bold border-2 border-purple-800 flex items-center justify-center gap-2">
-            🎲 おまかせ おんとねいろ
+        <button id="btn-surprise" class="btn-toy bg-purple-600 hover:bg-purple-500 text-white w-full py-2.5 rounded-full text-sm font-bold border-2 border-purple-800 flex items-center justify-center gap-1 shadow-md">
+            🎲 おまかせ
         </button>
         
-        <!-- Sound Control Panel (おとのかたちを かえよう) -->
-        <div id="status-panel" class="bg-amber-100/90 border-4 border-dashed border-amber-300 rounded-3xl p-4 shadow-md flex flex-col gap-3">
-            <h2 class="font-extrabold text-orange-500 text-base flex items-center gap-2">
-                🎛️ おとのかたちを かえよう
+        <div id="status-panel" class="bg-amber-100/90 border-4 border-dashed border-amber-300 rounded-2xl p-3 shadow-sm flex flex-col gap-2.5">
+            <h2 class="font-extrabold text-orange-500 text-sm flex items-center gap-1">
+                🎛️ おとをかえる
             </h2>
             
-            <!-- 1. おとのしゅるい -->
             <div class="flex flex-col gap-0.5">
-                <div class="flex justify-between items-center font-bold text-sm text-amber-900">
-                    <span>おとのしゅるい</span>
+                <div class="flex justify-between items-center font-bold text-xs text-amber-900">
+                    <span>しゅるい</span>
                     <span id="label-wave" class="text-amber-900">ピコピコ</span>
                 </div>
-                <div class="text-xs text-amber-700 font-semibold mb-1">どんな かんじの おと にする？</div>
                 <input type="range" id="ctrl-wave" min="0" max="3" step="1" value="0">
             </div>
 
-            <!-- 2. たちあがり -->
             <div class="flex flex-col gap-0.5">
-                <div class="flex justify-between items-center font-bold text-sm text-amber-900">
+                <div class="flex justify-between items-center font-bold text-xs text-amber-900">
                     <span>たちあがり</span>
                     <span id="label-attack" class="text-amber-900">すぐ鳴る</span>
                 </div>
-                <div class="text-xs text-amber-700 font-semibold mb-1">音が出るまでの スピード</div>
                 <input type="range" id="ctrl-attack" min="0" max="1" step="0.01" value="0.05">
             </div>
 
-            <!-- 3. のび〜る＆おふろば -->
             <div class="flex flex-col gap-0.5">
-                <div class="flex justify-between items-center font-bold text-sm text-amber-900">
-                    <span>のび〜る＆おふろば</span>
+                <div class="flex justify-between items-center font-bold text-xs text-amber-900">
+                    <span>のび〜る</span>
                     <span id="label-release-reverb" class="text-amber-900">すこし</span>
                 </div>
-                <div class="text-xs text-amber-700 font-semibold mb-1">音のながさと おふろの中みたいな響き</div>
                 <input type="range" id="ctrl-release-reverb" min="0" max="1" step="0.01" value="0.2">
             </div>
 
-            <!-- 4. びよびよ -->
             <div class="flex flex-col gap-0.5">
-                <div class="flex justify-between items-center font-bold text-sm text-amber-900">
+                <div class="flex justify-between items-center font-bold text-xs text-amber-900">
                     <span>びよびよ</span>
                     <span id="label-biyobiyo" class="text-amber-900">なし</span>
                 </div>
-                <div class="text-xs text-amber-700 font-semibold mb-1">「ミョーン！」という おもしろいクセ</div>
                 <input type="range" id="ctrl-biyobiyo" min="0" max="1" step="0.01" value="0.2">
             </div>
 
-            <!-- 5. やまびこ -->
             <div class="flex flex-col gap-0.5">
-                <div class="flex justify-between items-center font-bold text-sm text-amber-900">
+                <div class="flex justify-between items-center font-bold text-xs text-amber-900">
                     <span>やまびこ</span>
                     <span id="label-delay" class="text-amber-900">なし</span>
                 </div>
-                <div class="text-xs text-amber-700 font-semibold mb-1">「ヤッホー」って はねかえる音</div>
                 <input type="range" id="ctrl-delay" min="0" max="1" step="0.01" value="0.2">
             </div>
         </div>
 
-        <!-- Rhythm Controls (いろいろ リズム) -->
-        <div id="rhythm-panel" class="bg-amber-100/90 border-4 border-dashed border-amber-300 rounded-3xl p-4 shadow-md flex flex-col gap-2">
-            <h2 class="font-extrabold text-orange-500 text-base flex items-center gap-2">
-                🥁 いろいろ リズム
+        <div id="rhythm-panel" class="bg-amber-100/90 border-4 border-dashed border-amber-300 rounded-2xl p-3 shadow-sm flex flex-col gap-2">
+            <h2 class="font-extrabold text-orange-500 text-sm flex items-center gap-1">
+                🥁 リズム
             </h2>
-            <div class="grid grid-cols-3 gap-2">
-                <button class="rhythm-btn rhythm-btn-card bg-pink-500 hover:bg-pink-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-pink-600" data-rhythm="0">
+            <!-- 20%の幅に合わせて2列に配置（縦画面時はCSSで3列に変更） -->
+            <div class="rhythm-grid grid grid-cols-2 gap-2">
+                <button class="rhythm-btn rhythm-btn-card bg-pink-500 hover:bg-pink-400 text-white font-extrabold py-2 px-1 rounded-xl text-center text-[11px] leading-tight border-2 border-pink-600" data-rhythm="0">
                     てんぽよく<br>ポップ
                 </button>
-                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="1">
+                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-2 px-1 rounded-xl text-center text-[11px] leading-tight border-2 border-emerald-600" data-rhythm="1">
                     ノリノリ<br>ダンス
                 </button>
-                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="2">
+                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-2 px-1 rounded-xl text-center text-[11px] leading-tight border-2 border-emerald-600" data-rhythm="2">
                     ゆったり<br>エレクトロ
                 </button>
-                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="3">
+                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-2 px-1 rounded-xl text-center text-[11px] leading-tight border-2 border-emerald-600" data-rhythm="3">
                     ドコドコ<br>ロック
                 </button>
-                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-emerald-600" data-rhythm="4">
+                <button class="rhythm-btn rhythm-btn-card bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold py-2 px-1 rounded-xl text-center text-[11px] leading-tight border-2 border-emerald-600" data-rhythm="4">
                     あやしい<br>ヒップホップ
                 </button>
-                <button id="btn-stop-rhythm" class="rhythm-btn-card bg-rose-500 hover:bg-rose-400 text-white font-extrabold py-3 px-1 rounded-2xl text-center text-xs leading-tight flex items-center justify-center border-2 border-rose-600">
+                <button id="btn-stop-rhythm" class="rhythm-btn-card bg-rose-500 hover:bg-rose-400 text-white font-extrabold py-2 px-1 rounded-xl text-center text-[11px] leading-tight border-2 border-rose-600">
                     ⏹️<br>とめる
                 </button>
             </div>
@@ -269,7 +261,7 @@
 
     </div>
 
-    <!-- 右側：メイン画面で大きく表示するパッドエリア -->
+    <!-- 右側：パッドエリア (80%) -->
     <div class="pad-panel">
         <div class="pad-grid-container">
             <div id="pad-grid" class="pad-grid">
@@ -283,10 +275,9 @@
 <script>
     // --- Setup & Configuration ---
     const GRID_SIZE = 25;
-    let PENTATONIC_RATIOS = [1, 9/8, 5/4, 3/2, 5/3]; // Major pentatonic ratios
-    let BASE_FREQ = 65.41; // C2
+    let PENTATONIC_RATIOS = [1, 9/8, 5/4, 3/2, 5/3]; 
+    let BASE_FREQ = 65.41; 
 
-    // Synthesizer State
     const synthParams = {
         wave: 0,
         attack: 0.05,    
@@ -304,14 +295,12 @@
     let isAudioInitialized = false;
     let isSwiping = false;
     
-    // Rhythm Sequencer State
     let isPlayingRhythm = false;
     let rhythmTimerID = null;
     let currentPattern = null;
     let rhythmStep = 0;
     let nextDrumTime = 0;
 
-    // Drum Patterns
     const rhythmPatterns = [
         { name: "てんぽよく ポップ", bpm: 120, steps: 16, 
           kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0], 
@@ -335,13 +324,11 @@
           hihat: [1,1,0,1, 1,1,0,1, 1,1,0,1, 1,1,0,1] }
     ];
 
-    // --- DOM Elements ---
     const padGrid = document.getElementById('pad-grid');
     const btnSurprise = document.getElementById('btn-surprise');
     const rhythmBtns = document.querySelectorAll('.rhythm-btn');
     const btnStopRhythm = document.getElementById('btn-stop-rhythm');
     
-    // Sliders & Text Labels
     const sliders = {
         wave: document.getElementById('ctrl-wave'),
         attack: document.getElementById('ctrl-attack'),
@@ -398,10 +385,8 @@
         }
     });
 
-    // --- Audio Engine ---
     function initAudio() {
         if (isAudioInitialized) return;
-        
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
 
@@ -441,7 +426,6 @@
         const sampleRate = audioCtx.sampleRate;
         const length = sampleRate * duration;
         const impulse = audioCtx.createBuffer(2, length, sampleRate);
-        
         for (let channel = 0; channel < 2; channel++) {
             const channelData = impulse.getChannelData(channel);
             for (let i = 0; i < length; i++) {
@@ -457,13 +441,10 @@
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(masterCompressor);
-
         osc.frequency.setValueAtTime(150, time);
         osc.frequency.exponentialRampToValueAtTime(0.001, time + 0.5);
-
         gain.gain.setValueAtTime(1, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
-
         osc.start(time);
         osc.stop(time + 0.5);
     }
@@ -473,18 +454,15 @@
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        
         const noise = audioCtx.createBufferSource();
         noise.buffer = buffer;
         const noiseFilter = audioCtx.createBiquadFilter();
         noiseFilter.type = 'highpass';
         noiseFilter.frequency.value = 1000;
         const noiseGain = audioCtx.createGain();
-        
         noise.connect(noiseFilter);
         noiseFilter.connect(noiseGain);
         noiseGain.connect(masterCompressor);
-
         noiseGain.gain.setValueAtTime(0.8, time);
         noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
         noise.start(time);
@@ -494,12 +472,10 @@
         osc.type = 'triangle';
         osc.connect(oscGain);
         oscGain.connect(masterCompressor);
-
         osc.frequency.setValueAtTime(250, time);
         oscGain.gain.setValueAtTime(0.5, time);
         oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
         osc.start(time);
-        
         noise.stop(time + 0.2);
         osc.stop(time + 0.2);
     }
@@ -509,27 +485,21 @@
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        
         const noise = audioCtx.createBufferSource();
         noise.buffer = buffer;
-        
         const bandpass = audioCtx.createBiquadFilter();
         bandpass.type = 'bandpass';
         bandpass.frequency.value = 10000;
-        
         const highpass = audioCtx.createBiquadFilter();
         highpass.type = 'highpass';
         highpass.frequency.value = 7000;
-        
         const gain = audioCtx.createGain();
         gain.gain.setValueAtTime(0.3, time);
         gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
-
         noise.connect(bandpass);
         bandpass.connect(highpass);
         highpass.connect(gain);
         gain.connect(masterCompressor);
-
         noise.start(time);
         noise.stop(time + 0.05);
     }
@@ -538,7 +508,6 @@
         const row = Math.floor(padIndex / 5);
         const col = padIndex % 5;
         const octave = 4 - row;
-        
         const baseFreqForOctave = BASE_FREQ * Math.pow(2, octave);
         return baseFreqForOctave * PENTATONIC_RATIOS[col];
     }
@@ -548,7 +517,6 @@
         if (audioCtx.state === 'suspended') audioCtx.resume();
 
         const now = audioCtx.currentTime;
-
         const actualAttack = 0.01 + synthParams.attack * 1.49;
         const actualRelease = 0.1 + synthParams.releaseReverb * 2.9;
         const waveType = synthParams.wave;
@@ -584,7 +552,6 @@
         
         const startFreq = Math.min(20000, frequency + 1000 + biyo * 8000);
         const sweepTime = Math.max(0.1, 0.5 * biyo);
-        
         filter.frequency.setValueAtTime(startFreq, now);
         filter.frequency.exponentialRampToValueAtTime(frequency, now + sweepTime);
 
@@ -599,7 +566,6 @@
         osc2.connect(osc2Gain);
         osc2Gain.connect(filter);
         filter.connect(env);
-
         env.connect(masterCompressor);
         env.connect(globalDelaySend);
         env.connect(globalReverbSend);
@@ -618,12 +584,10 @@
         };
     }
 
-    // Generate UI Grid
     const pads = [];
     for (let i = 0; i < GRID_SIZE; i++) {
         const pad = document.createElement('div');
         const row = Math.floor(i / 5);
-        
         pad.className = `pad row-${row} w-full h-full cursor-pointer`;
         pad.dataset.index = i;
         
@@ -635,9 +599,7 @@
         });
 
         pad.addEventListener('pointerenter', (e) => {
-            if (isSwiping) {
-                triggerPad(pad);
-            }
+            if (isSwiping) triggerPad(pad);
         });
 
         padGrid.appendChild(pad);
@@ -650,16 +612,13 @@
     function triggerPad(padElement) {
         const idx = parseInt(padElement.dataset.index);
         const freq = getFrequency(idx);
-        
         padElement.classList.add('active');
         setTimeout(() => padElement.classList.remove('active'), 150);
-
         playNote(freq);
     }
 
     btnSurprise.addEventListener('click', () => {
         initAudio();
-        
         const randomVals = {
             wave: Math.floor(Math.random() * 4),
             attack: Math.random(),
@@ -667,14 +626,10 @@
             biyobiyo: Math.random(),
             delay: Math.random()
         };
-
         Object.keys(randomVals).forEach(key => {
             synthParams[key] = randomVals[key];
-            if(sliders[key]) {
-                sliders[key].value = randomVals[key];
-            }
+            if(sliders[key]) sliders[key].value = randomVals[key];
         });
-        
         updateLabels();
 
         const scales = [
@@ -687,48 +642,36 @@
 
         btnSurprise.classList.add('active');
         setTimeout(() => btnSurprise.classList.remove('active'), 100);
-
         playNote(getFrequency(12));
     });
 
-    // --- Rhythm Sequencer ---
     function scheduleDrums() {
         const lookahead = 0.1;
-        
         while (nextDrumTime < audioCtx.currentTime + lookahead) {
             if (currentPattern.kick[rhythmStep]) playKick(nextDrumTime);
             if (currentPattern.snare[rhythmStep]) playSnare(nextDrumTime);
             if (currentPattern.hihat[rhythmStep]) playHihat(nextDrumTime);
-
             const secondsPerBeat = 60.0 / currentPattern.bpm;
             const secondsPerSixteenth = secondsPerBeat / 4;
             nextDrumTime += secondsPerSixteenth;
             rhythmStep = (rhythmStep + 1) % currentPattern.steps;
         }
-        
         rhythmTimerID = setTimeout(scheduleDrums, 25);
     }
 
     function stopRhythm() {
         isPlayingRhythm = false;
         clearTimeout(rhythmTimerID);
-        rhythmBtns.forEach(b => {
-            b.classList.remove('ring-4', 'ring-amber-400', 'scale-105');
-        });
+        rhythmBtns.forEach(b => b.classList.remove('ring-4', 'ring-amber-400', 'scale-105'));
     }
 
     rhythmBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             initAudio();
             if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (isPlayingRhythm) clearTimeout(rhythmTimerID);
             
-            if (isPlayingRhythm) {
-                clearTimeout(rhythmTimerID);
-            }
-            
-            rhythmBtns.forEach(b => {
-                b.classList.remove('ring-4', 'ring-amber-400', 'scale-105');
-            });
+            rhythmBtns.forEach(b => b.classList.remove('ring-4', 'ring-amber-400', 'scale-105'));
             btn.classList.add('ring-4', 'ring-amber-400', 'scale-105');
 
             isPlayingRhythm = true;
